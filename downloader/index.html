@@ -26,7 +26,8 @@
 
     <a id="new-file" class="btn btn-sm btn-primary">Make a new file</a>
 
-    <a id="downloader" class="btn btn-sm btn-primary">Start downloading the archive.org 'commute' item</a>
+    <a id="download-item" class="btn btn-sm btn-primary">Start downloading the archive.org item:</a>
+    <input id="IAID" type="text" name="IAID" value="commute"/>
   </div>
 </body>
 
@@ -34,6 +35,15 @@
 <script type="module">
 
 import $ from 'https://esm.archive.org/jquery'
+
+// The imported methods will use the File
+// System Access API or a fallback implementation.
+import {
+  fileOpen,
+  directoryOpen,
+  fileSave,
+} from "https://unpkg.com/browser-fs-access"
+
 
 const log = console.log.bind(console)
 
@@ -78,15 +88,14 @@ async function main() {
 
 
 async function write_new_file() {
-  const options = {
+  const fh = await window.showSaveFilePicker({
     types: [{
       description: 'A JPEG',
       accept: {
         'image/jpeg': ['.jpg'],
       },
     }],
-  }
-  const fh = await window.showSaveFilePicker(options)
+  })
 
   const data = await fetch('https://archive.org/download/stairs/stairs.jpg')
   const contents = await data.blob()
@@ -117,21 +126,56 @@ async function getNewFileHandle() {
 
 // Save changes to disk
 async function writeFile() {
-  const data = await fetch('https://archive.org/download/stairs/stairs.jpg')
+  const IAID = document.getElementById('IAID').value
+
+  const data = await fetch(`https://archive.org/metadata/${IAID}/files`)
   const contents = await data.blob()
-  // Create a FileSystemWritableFileStream to write to.
   const writable = await FH.createWritable()
-  // Write the contents of the file to the stream.
   await writable.write(contents)
-  // Close the file and write the contents to disk.
   await writable.close()
+}
+
+
+async function downloadItem() {
+  const IAID = document.getElementById('IAID').value
+
+  const dirHandle = await window.showDirectoryPicker();
+  await dirHandle.requestPermission({ mode: "readwrite" });
+
+  const mdapi = await (await fetch(`https://archive.org/metadata/${IAID}`)).json()
+  const prefix = `https://archive.org/download/${IAID}/`
+  log(mdapi)
+
+  for (const fileobj of mdapi.files) {
+    const file = fileobj.name
+    log('GET', file)
+
+    try {
+      const data = await fetch(`${prefix}${file}`)
+      const blob = await data.blob()
+      const outfile = file.replace(/.*\//, '')
+      log('WRITE TO', outfile)
+
+      const fh = await dirHandle.getFileHandle(outfile, { create: true })
+
+      const writable = await fh.createWritable()
+      await writable.write(blob)
+      await writable.close()
+      continue
+
+      await fileSave(blob, { fileName: outfile })
+    } catch (e) {
+      log('ERROR', e) // skip over CORS-restricted files for now
+    }
+  }
 }
 
 
 document.getElementById('dir-sel').addEventListener('click', main)
 document.getElementById('download-jpg').addEventListener('click', write_new_file)
 document.getElementById('new-file').addEventListener('click', getNewFileHandle)
-document.getElementById('downloader').addEventListener('click', writeFile)
+//document.getElementById('downloader').addEventListener('click', writeFile)
+document.getElementById('download-item').addEventListener('click', downloadItem)
 
 
 </script>
