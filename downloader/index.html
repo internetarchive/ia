@@ -7,6 +7,7 @@
       display: flex;
       flex-direction: row;
       justify-content: space-around;
+      margin-top: 50px;
     }
     .btns .btn {
       margin:10px;
@@ -19,15 +20,22 @@
     File System Access API
   </a>
 
+
+  <div class="card card-body bg-light">
+    <center>
+      <a id="download-item" class="btn btn-sm btn-primary">Download archive.org item:</a>
+      <form>
+        <input id="IAID" class="form-control" type="text" name="IAID" value="commute" style="max-width:25%"/>
+      </form>
+    </center>
+  </div>
+
   <div class="btns">
     <a id="dir-sel" class="btn btn-sm btn-primary">Open Folder on your Computer</a>
 
     <a id="download-jpg" class="btn btn-sm btn-primary">Download an archive.org JPEG</a>
 
     <a id="new-file" class="btn btn-sm btn-primary">Make a new file</a>
-
-    <a id="download-item" class="btn btn-sm btn-primary">Start downloading the archive.org item:</a>
-    <input id="IAID" type="text" name="IAID" value="commute"/>
   </div>
 </body>
 
@@ -146,9 +154,9 @@ async function downloadItem() {
   const prefix = `https://archive.org/download/${IAID}/`
   log(mdapi)
 
-  for (const fileobj of mdapi.files) {
+  for (const fileobj of mdapi.files.sort()) {
     const file = fileobj.name
-    log('GET', file)
+    msg(`downloading: [${IAID}] ${file}`)
 
     try {
       const data = await fetch(`${prefix}${file}`)
