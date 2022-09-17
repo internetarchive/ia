@@ -12,34 +12,42 @@ const msg = (txt) => {
 
 
 async function download_item() {
-  const IAID = document.getElementById('IAID').value
+  const IAIDS = document.getElementById('IAID').value.split(',')
 
-  const dirHandle = await window.showDirectoryPicker({
+  const dir_handle = await window.showDirectoryPicker({
     startIn: 'desktop',
+    mode: 'readwrite',
   })
-  await dirHandle.requestPermission({ mode: 'readwrite' })
 
-  const mdapi = await (await fetch(`https://archive.org/metadata/${IAID}`)).json()
-  const prefix = `https://archive.org/download/${IAID}/`
-  log(mdapi)
+  for (const IAIDin of IAIDS) {
+    const IAID = IAIDin.trim()
+    const mdapi = await (await fetch(`https://archive.org/metadata/${IAID}`)).json()
+    const prefix = `https://archive.org/download/${IAID}/`
+    log(mdapi)
 
-  for (const fileobj of mdapi.files.sort()) {
-    const file = fileobj.name
-    msg(`downloading: [${IAID}] ${file}`)
+    for (const fileobj of mdapi.files.sort()) {
+      const file = fileobj.name
+      msg(`downloading: [${IAID}] ${file}`)
 
-    try {
-      const data = await fetch(`${prefix}${file}`)
-      const blob = await data.blob()
-      const outfile = file.replace(/.*\//, '')
-      log('WRITE TO', outfile)
+      try {
+        const data = await fetch(`${prefix}${file}`)
+        const blob = await data.blob()
+        const outfile = file.replace(/.*\//, '')
+        log('WRITE TO', `${IAID}/${outfile}`)
 
-      const fh = await dirHandle.getFileHandle(outfile, { create: true })
+        // create IDENTIFIER name subdirectory
+        const subdir = await dir_handle.getDirectoryHandle(IAID, { create: true })
 
-      const writable = await fh.createWritable()
-      await writable.write(blob)
-      await writable.close()
-    } catch (e) {
-      log('ERROR', e) // skip over CORS-restricted files for now
+        // xxx if file exists and is expected size, skip
+        const fh = await subdir.getFileHandle(outfile, { create: true })
+
+
+        const writable = await fh.createWritable()
+        await writable.write(blob)
+        await writable.close()
+      } catch (error) {
+        log({ error }) // xxx skip over CORS-restricted files for now
+      }
     }
   }
 }
