@@ -1,4 +1,4 @@
-# ia
+# Internet Archive JS API
 
 ## Presently using GitHub Pages
 - https://internetarchive.github.io/ia/downloader

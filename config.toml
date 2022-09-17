@@ -1,0 +1,3 @@
+baseURL = "https://internetarchive.github.io/ia/"
+languageCode = "en-us"
+title = "Internet Archive JS API"
