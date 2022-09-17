@@ -1,7 +1,7 @@
 # 🏛️ Internet Archive JS API 🏛️
 
 ## Presently using GitHub Pages
-- site: **<https://internetarchive.github.io/ia/downloader>**
+- site: **<https://internetarchive.github.io/ia>**
 - source: **<https://github.com/internetarchive/ia>**
 
 ## Proof of Concepts
