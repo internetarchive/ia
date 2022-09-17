@@ -1,16 +1,18 @@
-# Internet Archive JS API
+# 🏛️ Internet Archive JS API 🏛️
 
 ## Presently using GitHub Pages
-- sit: <https://internetarchive.github.io/ia/downloader>
-- source: <https://github.com/internetarchive/ia>
+- site: **<https://internetarchive.github.io/ia/downloader>**
+- source: **<https://github.com/internetarchive/ia>**
 
 ## Proof of Concepts
 enjoy some demo URLs while we do some research:
-- **[downloader](downloader/)**
-- **[search](search/)**
+
+⬇️ **[download/](download/)** ⬇️
+
+🔍 **[search/](search/)** 🔎
 
 
-## Help Us :)
+## 🙏🏽 Help Us :)
 We are actively interested in volunteers who'd like to contribute to this project and expand it.
 
 

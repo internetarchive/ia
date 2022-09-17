@@ -2,7 +2,7 @@
 // can uncomment if want to use jQuery:
 // import $ from 'https://esm.archive.org/jquery'
 
-import log from '../util/log.js'
+import log from './util/log.js'
 
 const tile = (hit) => {
   const e = document.createElement('div')
