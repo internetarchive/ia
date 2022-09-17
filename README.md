@@ -1,6 +1,6 @@
 # ia
 
-## Presently using GitHub Pages:
+## Presently using GitHub Pages
 https://internetarchive.github.io/ia/downloader/
 
 ## Proof of Concepts
