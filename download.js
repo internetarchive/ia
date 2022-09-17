@@ -1,6 +1,6 @@
 import $ from 'https://esm.archive.org/jquery'
-import './demo.js'
-import log from '../util/log.js'
+import './download/demo.js'
+import log from './util/log.js'
 
 const msg = (txt, id) => {
   const e = document.createElement('div')
