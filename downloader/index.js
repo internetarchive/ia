@@ -14,7 +14,9 @@ const msg = (txt) => {
 async function download_item() {
   const IAID = document.getElementById('IAID').value
 
-  const dirHandle = await window.showDirectoryPicker()
+  const dirHandle = await window.showDirectoryPicker({
+    startIn: 'desktop',
+  })
   await dirHandle.requestPermission({ mode: 'readwrite' })
 
   const mdapi = await (await fetch(`https://archive.org/metadata/${IAID}`)).json()
