@@ -11,6 +11,7 @@ const tile = (hit) => {
 <a href="https://archive.org/details/${hit.identifier}">
   <img src="https://archive.org/services/img/${hit.identifier}"/>
   <h3>${hit.title}</h3>
+  <i>Date: ${hit.publicdate}</i><hr>
   ${hit.description}
 </a>
 `
