@@ -1,21 +1,22 @@
-
-// can uncomment if want to use jQuery:
-// import $ from 'https://esm.archive.org/jquery'
+import $ from 'https://esm.archive.org/jquery'
 import './demo.js'
 import log from '../util/log.js'
 
-const msg = (txt) => {
+const msg = (txt, id) => {
   const e = document.createElement('div')
-  e.innerHTML = `<div class="card card-body bg-light">${txt}</div>`
-  document.body.appendChild(e)
+  if (id) e.setAttribute('id', id)
+  e.classList = 'card card-body bg-light'
+  e.innerHTML = txt
+  $('#msgs').prepend(e)
 }
 
+let NFILES = 0
 
 async function download_item() {
   const IAIDS = document.getElementById('IAIDS').value.split(',')
 
   const dir_handle = await window.showDirectoryPicker({
-    startIn: 'desktop',
+    // startIn: 'desktop',
     mode: 'readwrite',
   })
 
@@ -29,8 +30,9 @@ async function download_item() {
     // const prefix = `https://${mdapi.d1}${mdapi.dir}/${IAID}/`
 
     for (const fileobj of mdapi.files.sort()) {
+      NFILES += 1
       const file = fileobj.name
-      msg(`downloading: [${IAID}] ${file}`)
+      msg(`downloading: [${IAID}] ${file}`, `msg${NFILES}`)
 
       try {
         const data = await fetch(`${prefix}${file}`)
@@ -52,8 +54,10 @@ async function download_item() {
         const writable = await fh.createWritable()
         await writable.write(blob)
         await writable.close()
+        $(`#msg${NFILES}`).addClass('alert alert-success').fadeOut(2500)
       } catch (error) {
         log({ error }) // xxx skip over CORS-restricted files for now
+        $(`#msg${NFILES}`).addClass('alert alert-danger').fadeOut(2500)
       }
     }
   }
