@@ -5,6 +5,7 @@ import log from './util/log.js'
 window.$ = $
 
 const FINISHED_FADE_TIME = 2500 // 2.5s
+const MAX_DOWNLOADS_IN_PARALLEL = 6
 
 class Download {
   constructor(DIRH) {
@@ -27,41 +28,76 @@ class Download {
       const prefix = `https://archive.org/download/${IAID}/`
       // const prefix = `https://${mdapi.d1}${mdapi.dir}/${IAID}/`
 
+      // Build up multiple file downloads in parallel, via promises.
+      // We use `Promise.any()` to 'race' and for first file to finish in list of active promises.
+      // Each file gets a number, and its promise returns it, so we know how to delete its element
+      // from `proms` array -- and `Object.values(proms)` is all the current active files/promises.
+      const proms = []
       for (const fileobj of mdapi.files.sort()) {
-        const file = fileobj.name
-        const msgid = this.msg(IAID, file)
-        const $msgdiv = $(`#${msgid}`)
-        const outfile = file.replace(/.*\//, '') // like basename() xxx preserve optional item subdirs
-        const filekey = `${IAID}/${outfile}`
-        this.FILEKEYS[filekey] = { msgid, size: file.size, size_last: 0 }
-        try {
-          const data = await fetch(`${prefix}${file}`)
+        const promN = proms.length
+        proms.push(this.download_file(IAID, prefix, fileobj, promN))
 
-          // xxx obviously not great for very large files, eg: /detais/night_of_the_living_dead
-          // but a demo start
-          const blob = await data.blob()
+        const still_running = Object.values(proms)
+        log(`PROMISES total: ${promN}, still running: ${still_running.length}`)
 
-          // create IDENTIFIER name subdirectory
-          const subdir = await this.DIRH.getDirectoryHandle(IAID, { create: true })
+        if (still_running.length < MAX_DOWNLOADS_IN_PARALLEL)
+          // eslint-disable-next-line no-continue
+          continue // keep adding parallel requests
 
-          // xxx if file exists and is expected size, skip
-          const fh = await subdir.getFileHandle(outfile, { create: true })
+        const finishedN = await Promise.any(still_running)
+        delete proms[finishedN]
+      }
 
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const promN = proms.length
 
-          const writable = await fh.createWritable()
-          await writable.write(blob)
-          await writable.close()
-          $msgdiv.find('.progress-bar').css('width', '100%')
-          $msgdiv.addClass('alert alert-success').fadeOut(FINISHED_FADE_TIME)
-        } catch (error) {
-          log({ error }) // xxx skip over CORS-restricted files for now
-          $msgdiv.find('.progress-bar').css('width', '100%')
-          $msgdiv.addClass('alert alert-danger').fadeOut(FINISHED_FADE_TIME)
-        }
-        delete this.FILEKEYS[filekey]
-        setTimeout(() => $msgdiv.remove(), FINISHED_FADE_TIME)
+        const still_running = Object.values(proms)
+        log(`PROMISES total: ${promN}, still running: ${still_running.length}`)
+
+        if (!still_running.length) break
+
+        const finishedN = await Promise.any(still_running)
+        delete proms[finishedN]
       }
     }
+  }
+
+  async download_file(IAID, prefix, fileobj, promN) {
+    const file = fileobj.name
+    const msgid = this.msg(IAID, file)
+    const $msgdiv = $(`#${msgid}`)
+    const outfile = file.replace(/.*\//, '') // like basename() xxx preserve optional item subdirs
+    const filekey = `${IAID}/${outfile}`
+    this.FILEKEYS[filekey] = { msgid, size: file.size, size_last: 0 }
+    try {
+      const data = await fetch(`${prefix}${file}`)
+
+      // xxx obviously not great for very large files, eg: /detais/night_of_the_living_dead
+      // but a demo start
+      const blob = await data.blob()
+
+      // create IDENTIFIER name subdirectory
+      const subdir = await this.DIRH.getDirectoryHandle(IAID, { create: true })
+
+      // xxx if file exists and is expected size, skip
+      const fh = await subdir.getFileHandle(outfile, { create: true })
+
+
+      const writable = await fh.createWritable()
+      await writable.write(blob)
+      await writable.close()
+      $msgdiv.find('.progress-bar').css('width', '100%')
+      $msgdiv.addClass('alert alert-success').fadeOut(FINISHED_FADE_TIME)
+    } catch (error) {
+      log({ error }) // xxx skip over CORS-restricted files for now
+      $msgdiv.find('.progress-bar').css('width', '100%')
+      $msgdiv.addClass('alert alert-danger').fadeOut(FINISHED_FADE_TIME)
+    }
+    delete this.FILEKEYS[filekey]
+    setTimeout(() => $msgdiv.remove(), FINISHED_FADE_TIME)
+
+    return Promise.resolve(promN)
   }
 
   msg(IAID, file) {
