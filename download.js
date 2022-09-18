@@ -1,24 +1,28 @@
 import $ from 'https://esm.archive.org/jquery'
-import './download/demo.js'
 import log from './util/log.js'
 
 window.$ = $
 
 const FINISHED_FADE_TIME = 2500 // 2.5s
 const MAX_DOWNLOADS_IN_PARALLEL = 6
+const FILE_MAX_SIZE_SINGLE_READ = 50 * 1024 // files smaller than this - read in 1 `fetch()` chunk
 
+const FILEKEYS = {}
+let DIRH
 class Download {
-  constructor(DIRH) {
+  constructor(DIRHin) {
     this.NFILES = 0
-    this.FILEKEYS = {}
-    this.DIRH = DIRH
+    DIRH = DIRHin
   }
 
   async download_items() {
     const IAIDS = document.getElementById('IAIDS').value.split(',')
 
-    setTimeout(this.progress_update, 1000)
+    setTimeout(this.progress_update, 250)
 
+    this.msg(`downloading: ${IAIDS.length} items`, '#progress_items')
+
+    let done_num_ids = 0
     for (const IAIDin of IAIDS) {
       const IAID = IAIDin.trim()
       const mdapi = await (await fetch(`https://archive.org/metadata/${IAID}`)).json()
@@ -33,107 +37,180 @@ class Download {
       // Each file gets a number, and its promise returns it, so we know how to delete its element
       // from `proms` array -- and `Object.values(proms)` is all the current active files/promises.
       const proms = []
+
+      this.msg(`downloading: ${mdapi.files.length} files from item ${IAID}`, '#progress_files')
+
+      let ndownloading = 0
+      this.done_num_files = 0
       for (const fileobj of mdapi.files.sort()) {
-        const promN = proms.length
-        proms.push(this.download_file(IAID, prefix, fileobj, promN))
+        // if (fileobj.name !== 'night_of_the_living_dead.mp3') continue
 
-        const still_running = Object.values(proms)
-        log(`PROMISES total: ${promN}, still running: ${still_running.length}`)
+        const prom_idx = proms.length
 
-        if (still_running.length < MAX_DOWNLOADS_IN_PARALLEL)
-          // eslint-disable-next-line no-continue
-          continue // keep adding parallel requests
+        const done_callback = () => {
+          this.done_num_files += 1
+          delete proms[prom_idx]
+          $('#progress_files .progress-bar').css('width', `${100 * (this.done_num_files / mdapi.files.length)}%`)
 
-        const finishedN = await Promise.any(still_running)
-        delete proms[finishedN]
+          log(`PROMISES total: ${proms.length}, still running: ${Object.values(proms).length}`)
+        }
+
+        proms.push(this.download_file(IAID, prefix, fileobj, done_callback))
+
+        ndownloading = Object.values(proms).length
+        log(`PROMISES total: ${proms.length}, still running: ${ndownloading}`)
+
+        while (ndownloading >= MAX_DOWNLOADS_IN_PARALLEL) {
+          // eslint-disable-next-line no-promise-executor-return
+          await new Promise((r) => setTimeout(r, 250)) // sleep 1/4s
+          ndownloading = Object.values(proms).length
+        }
       }
 
       // eslint-disable-next-line no-constant-condition
-      while (true) {
-        const promN = proms.length
-
-        const still_running = Object.values(proms)
-        log(`PROMISES total: ${promN}, still running: ${still_running.length}`)
-
-        if (!still_running.length) break
-
-        const finishedN = await Promise.any(still_running)
-        delete proms[finishedN]
+      while (ndownloading) {
+        // eslint-disable-next-line no-promise-executor-return
+        await new Promise((r) => setTimeout(r, 250)) // sleep 1/4s
+        ndownloading = Object.values(proms).length
       }
+
+      done_num_ids += 1
+      $('#progress_items .progress-bar').css('width', `${100 * (done_num_ids / IAIDS.length)}%`)
     }
+
+    // Done all items!
+    $('#progress_files').fadeOut('slow')
+    $('.progress-bar').removeClass('progress-bar-animated')
+    $('#progress_items .card').toggleClass('bg-light').addClass('alert alert-success')
+    const swapme = $('#progress_items .card').html()
+    $('#progress_items .card').html(swapme.replace('downloading', 'downloaded'))
   }
 
-  async download_file(IAID, prefix, fileobj, promN) {
+  async download_file(IAID, prefix, fileobj, done_callback) {
     const file = fileobj.name
-    const msgid = this.msg(IAID, file)
+    const url = `${prefix}${file}`
+    const msgid = this.msg(`downloading: ${file}`)
     const $msgdiv = $(`#${msgid}`)
-    const outfile = file.replace(/.*\//, '') // like basename() xxx preserve optional item subdirs
+    const outfile = file.replace(/.*\//, '') // like basename().  xxx preserve optional item subdirs
     const filekey = `${IAID}/${outfile}`
-    this.FILEKEYS[filekey] = { msgid, size: file.size, size_last: 0 }
-    try {
-      const data = await fetch(`${prefix}${file}`)
+    FILEKEYS[filekey] = { msgid, size: parseInt(fileobj.size, 10), size_last: 0 }
 
-      // xxx obviously not great for very large files, eg: /detais/night_of_the_living_dead
-      // but a demo start
-      const blob = await data.blob()
-
-      // create IDENTIFIER name subdirectory
-      const subdir = await this.DIRH.getDirectoryHandle(IAID, { create: true })
-
-      // xxx if file exists and is expected size, skip
-      const fh = await subdir.getFileHandle(outfile, { create: true })
-
-
-      const writable = await fh.createWritable()
-      await writable.write(blob)
-      await writable.close()
+    const done_file = (errored) => {
       $msgdiv.find('.progress-bar').css('width', '100%')
-      $msgdiv.addClass('alert alert-success').fadeOut(FINISHED_FADE_TIME)
+      $msgdiv.addClass('alert '.concat(errored ? 'alert-danger' : 'alert-success'))
+        .fadeOut(FINISHED_FADE_TIME)
+      delete FILEKEYS[filekey]
+      setTimeout(() => $msgdiv.remove(), FINISHED_FADE_TIME)
+      done_callback()
+    }
+
+    try {
+      // create IDENTIFIER name subdirectory
+      const subdir = await DIRH.getDirectoryHandle(IAID, { create: true })
+
+      // xxx if file exists and is   expected size, skip
+      // xxx if file exists and isnt expected size, *resume* via byte ranges, etc.
+      const fh = await subdir.getFileHandle(outfile, { create: true }) // ret. FileSystemFileHandle
+      const writable = await fh.createWritable() // ret. FileSystemWritableFileStream
+
+      if (file.size < FILE_MAX_SIZE_SINGLE_READ) {
+        const data = await fetch(url)
+        const blob = await data.blob()
+        await writable.write(blob)
+        await writable.close()
+        done_file()
+      } else {
+        let NUM_RW = 0
+
+        // https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream#fetch_stream
+        fetch(url)
+          .then((response) => response.body)
+          .then((rb) => {
+            const reader = rb.getReader()
+
+            return new ReadableStream({
+              type: 'bytes',
+              async start(controller) {
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                  const { done, value } = await reader.read()
+                  if (done)
+                    break // no more data needs to be consumed, break the reading
+
+                  NUM_RW += value.length
+                  FILEKEYS[filekey].size_last = NUM_RW
+                  await writable.write(value)
+
+                  // Optionally append the value if you need the full blob later.
+                  // controller.enqueue(value)
+                }
+
+                done_file()
+                // Close the streams
+                await writable.close()
+                controller.close()
+                reader.releaseLock()
+              },
+            })
+          })
+          .catch((err) => {
+            log('oh dear', err)
+            done_file(true)
+          })
+      }
     } catch (error) {
       log({ error }) // xxx skip over CORS-restricted files for now
-      $msgdiv.find('.progress-bar').css('width', '100%')
-      $msgdiv.addClass('alert alert-danger').fadeOut(FINISHED_FADE_TIME)
+      done_file(true)
     }
-    delete this.FILEKEYS[filekey]
-    setTimeout(() => $msgdiv.remove(), FINISHED_FADE_TIME)
-
-    return Promise.resolve(promN)
   }
 
-  msg(IAID, file) {
-    const txt = `downloading: [${IAID}] ${file}`
-    const msgid = `msg${this.NFILES}`
+  msg(txt, dest = '#msgs') {
+    const suffix = dest === '#msgs' ? this.NFILES : ''
+    const msgid = `msg${suffix}`
     const e = document.createElement('div')
-    e.setAttribute('id', msgid)
+    if (dest === '#msgs')
+      e.setAttribute('id', msgid)
     e.classList = 'card card-body bg-light'
     e.innerHTML = `
     ${txt}
     <div class="progress">
       <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">&nbsp;</div>
     </div>`
-    $('#msgs').prepend(e)
-    this.NFILES += 1
+    if (dest === '#msgs') {
+      this.NFILES += 1
+      $(dest).prepend(e)
+    } else {
+      $(dest).html('') // xxx make betterly
+      $(dest).prepend(e)
+    }
     return msgid
   }
 
+  // eslint-disable-next-line class-methods-use-this
   async progress_update() {
-    for (const [filekey, info] of Object.entries(this.FILEKEYS)) {
-      const { msgid, size, size_last } = info
-      const parts = filekey.split('/')
-      const IAID = parts[0]
-      const outfile = parts.slice(1).join('/')
-      const subdir = await this.DIRH.getDirectoryHandle(IAID)
-      const fh = await subdir.getFileHandle(outfile)
-      const filedata = await fh.getFile()
-      const size_now = filedata.size
+    for (const [filekey, info] of Object.entries(FILEKEYS || {})) {
+      const { msgid, size /* , size_last */ } = info
+      log('progress_update()', filekey, info)
+      // switched to using r/w buffers to know how much is already downloaded (and written to disk)
+      // const parts = filekey.split('/')
+      // const IAID = parts[0]
+      // const outfile = parts.slice(1).join('/')
+      // const subdir = await DIRH.getDirectoryHandle(IAID)
+      // const fh = await subdir.getFileHandle(outfile)
+      // const filedata = await fh.getFile()
+      const size_now = info.size_last // Math.max(filedata.size, info.size_last) // xxx
 
-      if (size_last !== size_now) {
-        this.FILEKEYS[filekey].size_last = size_now
-        const percent = Math.round(100 * (size_now / size))
-        $(`#${msgid} .progress-bar`).css('width', `${percent}%`)
+      const percent = Math.round(100 * (size_now / size))
+      const width_new = `${percent}%`
+
+      const width_now = $(`#${msgid} .progress-bar`).css('width')
+
+      if (width_new !== width_now) {
+        // FILEKEYS[filekey].size_last = size_now // xxx
+        $(`#${msgid} .progress-bar`).css('width', width_new)
       }
     }
-    setTimeout(this.progress_update, 750)
+    setTimeout(this.progress_update, 250)
   }
 }
 
