@@ -187,7 +187,7 @@ class Download {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async progress_update() {
+  /* async */ progress_update() {
     for (const [filekey, info] of Object.entries(FILEKEYS || {})) {
       const { msgid, size /* , size_last */ } = info
       log('progress_update()', filekey, info)
