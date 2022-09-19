@@ -50,8 +50,7 @@ class Download {
           // be quickly resumable/rerunnable.  IF file exists and is desired size, skip re-download.
           const fh = await dirH.getFileHandle(Download.basename(fileobj.name))
           const filedata = await fh.getFile()
-          const size_now = filedata.size
-          if (fileobj.size === size_now) {
+          if (parseInt(fileobj.size, 10) === filedata.size) {
             this.done_num_files += 1
             // eslint-disable-next-line no-continue
             continue
@@ -167,12 +166,12 @@ class Download {
           })
           .catch((err) => {
             log('oh dear', err)
-            done_file(true)
+            done_file(true) // xxx remove dest file if 0B (eg: CORS block)
           })
       }
     } catch (error) {
       log({ error }) // xxx skip over CORS-restricted files for now
-      done_file(true)
+      done_file(true) // xxx remove dest file if 0B (eg: CORS block)
     }
   }
 
