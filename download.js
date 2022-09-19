@@ -56,8 +56,7 @@ class Download {
             // eslint-disable-next-line no-continue
             continue
           }
-          // eslint-disable-next-line no-empty
-        } catch (error) { log(fileobj.name, {error})}
+        } catch (error) { log(fileobj.name, { error }) }
 
         const prom_idx = proms.length
 
