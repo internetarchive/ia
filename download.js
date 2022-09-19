@@ -1,28 +1,28 @@
 import $ from 'https://esm.archive.org/jquery'
 import log from './util/log.js'
 
-window.$ = $
+window.$ = $ // handy for dev tools debugging
 
 const FINISHED_FADE_TIME = 2500 // 2.5s
 const MAX_DOWNLOADS_IN_PARALLEL = 6
 const FILE_MAX_SIZE_SINGLE_READ = 50 * 1024 // files smaller than this - read in 1 `fetch()` chunk
 
-const FILEKEYS = {}
-let DIRH
+const FILEINFO = {}
 class Download {
-  constructor(DIRHin) {
+  constructor(DIRH) {
     this.NFILES = 0
-    DIRH = DIRHin
+    this.DIRH = DIRH
   }
 
   async download_items() {
     const IAIDS = document.getElementById('IAIDS').value.split(',')
 
-    setTimeout(this.progress_update, 250)
+    setTimeout(Download.progress_update, 250)
 
-    this.msg(`downloading: ${IAIDS.length} items`, '#progress_items')
+    this.progress_msg(`downloading: ${IAIDS.length} items`, '#progress_items')
 
     let done_num_ids = 0
+
     for (const IAIDin of IAIDS) {
       const IAID = IAIDin.trim()
       const mdapi = await (await fetch(`https://archive.org/metadata/${IAID}`)).json()
@@ -38,12 +38,26 @@ class Download {
       // from `proms` array -- and `Object.values(proms)` is all the current active files/promises.
       const proms = []
 
-      this.msg(`downloading: ${mdapi.files.length} files from item ${IAID}`, '#progress_files')
+      this.progress_msg(`downloading: ${mdapi.files.length} files from item ${IAID}`, '#progress_files')
+
+      this.DIRS = {}
 
       let ndownloading = 0
       this.done_num_files = 0
       for (const fileobj of mdapi.files.sort()) {
-        // if (fileobj.name !== 'night_of_the_living_dead.mp3') continue
+        const dirH = await this.get_dir(`${IAID}/${fileobj.name}`)
+        try {
+          // be quickly resumable/rerunnable.  IF file exists and is desired size, skip re-download.
+          const fh = await dirH.getFileHandle(Download.basename(fileobj.name))
+          const filedata = await fh.getFile()
+          const size_now = filedata.size
+          if (fileobj.size === size_now) {
+            this.done_num_files += 1
+            // eslint-disable-next-line no-continue
+            continue
+          }
+          // eslint-disable-next-line no-empty
+        } catch (error) { log(fileobj.name, {error})}
 
         const prom_idx = proms.length
 
@@ -55,7 +69,7 @@ class Download {
           log(`PROMISES total: ${proms.length}, still running: ${Object.values(proms).length}`)
         }
 
-        proms.push(this.download_file(IAID, prefix, fileobj, done_callback))
+        proms.push(this.download_file(IAID, dirH, prefix, fileobj, done_callback))
 
         ndownloading = Object.values(proms).length
         log(`PROMISES total: ${proms.length}, still running: ${ndownloading}`)
@@ -86,34 +100,33 @@ class Download {
     $('#progress_items .card').html(swapme.replace('downloading', 'downloaded'))
   }
 
-  async download_file(IAID, prefix, fileobj, done_callback) {
-    const file = fileobj.name
-    const url = `${prefix}${file}`
-    const msgid = this.msg(`downloading: ${file}`)
+
+  async download_file(IAID, dirH, prefix, fileobj, done_callback) {
+    const outfile = fileobj.name
+    const url = `${prefix}${outfile}`
+    const msgid = this.progress_msg(`downloading: ${outfile}`)
     const $msgdiv = $(`#${msgid}`)
-    const outfile = file.replace(/.*\//, '') // like basename().  xxx preserve optional item subdirs
     const filekey = `${IAID}/${outfile}`
-    FILEKEYS[filekey] = { msgid, size: parseInt(fileobj.size, 10), size_last: 0 }
+    FILEINFO[filekey] = { msgid, size: parseInt(fileobj.size, 10), size_now: 0 }
 
     const done_file = (errored) => {
       $msgdiv.find('.progress-bar').css('width', '100%')
       $msgdiv.addClass('alert '.concat(errored ? 'alert-danger' : 'alert-success'))
         .fadeOut(FINISHED_FADE_TIME)
-      delete FILEKEYS[filekey]
+      delete FILEINFO[filekey]
       setTimeout(() => $msgdiv.remove(), FINISHED_FADE_TIME)
       done_callback()
     }
 
     try {
-      // create IDENTIFIER name subdirectory
-      const subdir = await DIRH.getDirectoryHandle(IAID, { create: true })
-
-      // xxx if file exists and is   expected size, skip
       // xxx if file exists and isnt expected size, *resume* via byte ranges, etc.
-      const fh = await subdir.getFileHandle(outfile, { create: true }) // ret. FileSystemFileHandle
-      const writable = await fh.createWritable() // ret. FileSystemWritableFileStream
+      const fh = await dirH.getFileHandle(
+        Download.basename(fileobj.name),
+        { create: true },
+      ) // returns FileSystemFileHandle
+      const writable = await fh.createWritable() // returns FileSystemWritableFileStream
 
-      if (file.size < FILE_MAX_SIZE_SINGLE_READ) {
+      if (fileobj.size < FILE_MAX_SIZE_SINGLE_READ) {
         const data = await fetch(url)
         const blob = await data.blob()
         await writable.write(blob)
@@ -138,7 +151,7 @@ class Download {
                     break // no more data needs to be consumed, break the reading
 
                   NUM_RW += value.length
-                  FILEKEYS[filekey].size_last = NUM_RW
+                  FILEINFO[filekey].size_now = NUM_RW
                   await writable.write(value)
 
                   // Optionally append the value if you need the full blob later.
@@ -164,7 +177,29 @@ class Download {
     }
   }
 
-  msg(txt, dest = '#msgs') {
+
+  async get_dir(filename) {
+    let parent_dir = this.DIRH
+    let dir
+    const dirs = filename.replace(/\/\/+/g, '/').split('/').slice(0, -1)
+    // log(dirs)
+    for (dir of dirs) {
+      // log({ filename, parent: parent_dir.name, dir })
+      try {
+        if (!(dir in this.DIRS))
+          this.DIRS[dir] = await parent_dir.getDirectoryHandle(dir, { create: true })
+        parent_dir = this.DIRS[dir]
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error({ error })
+        throw error
+      }
+    }
+    return this.DIRS[dir]
+  }
+
+
+  progress_msg(txt, dest = '#msgs') {
     const suffix = dest === '#msgs' ? this.NFILES : ''
     const msgid = `msg${suffix}`
     const e = document.createElement('div')
@@ -186,31 +221,24 @@ class Download {
     return msgid
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  /* async */ progress_update() {
-    for (const [filekey, info] of Object.entries(FILEKEYS || {})) {
-      const { msgid, size /* , size_last */ } = info
+  static progress_update() {
+    for (const [filekey, info] of Object.entries(FILEINFO || {})) {
+      const { msgid, size, size_now } = info
       log('progress_update()', filekey, info)
-      // switched to using r/w buffers to know how much is already downloaded (and written to disk)
-      // const parts = filekey.split('/')
-      // const IAID = parts[0]
-      // const outfile = parts.slice(1).join('/')
-      // const subdir = await DIRH.getDirectoryHandle(IAID)
-      // const fh = await subdir.getFileHandle(outfile)
-      // const filedata = await fh.getFile()
-      const size_now = info.size_last // Math.max(filedata.size, info.size_last) // xxx
 
       const percent = Math.round(100 * (size_now / size))
       const width_new = `${percent}%`
 
       const width_now = $(`#${msgid} .progress-bar`).css('width')
 
-      if (width_new !== width_now) {
-        // FILEKEYS[filekey].size_last = size_now // xxx
+      if (width_new !== width_now)
         $(`#${msgid} .progress-bar`).css('width', width_new)
-      }
     }
-    setTimeout(this.progress_update, 250)
+    setTimeout(Download.progress_update, 250)
+  }
+
+  static basename(filename) {
+    return filename.replace(/.*\//, '')
   }
 }
 
