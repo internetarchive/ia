@@ -2,11 +2,11 @@ name: CICD
 on: push
 
 jobs:
-  lint:
+  test:
     runs-on: ubuntu-latest
     container:
       # https://github.com/denoland/deno_docker
-      image: https://hub.docker.com/r/denoland/deno
+      image: denoland/deno:alpine
     steps:
     - uses: actions/checkout@v2
     - run: |
