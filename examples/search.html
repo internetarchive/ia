@@ -26,8 +26,8 @@
   // can uncomment if want to use jQuery:
   // import $ from 'https://esm.archive.org/jquery'
 
-  import * as Search from "../lib/search.js"
-  import * as Fields from "../lib/fields.js"
+  import Search from "../lib/search.js"
+  import Fields from "../lib/fields.js"
   import * as Query from "../lib/query.js"
   import log from '../util/log.js'
 
@@ -35,9 +35,8 @@
     const any = new Query.QueryString("any", "dragon")
     const media = new Query.QueryMediaType("etree")
     const and = new Query.QueryAnd(any, media)
-    const fields = Fields.FieldTable
 
-    const client = new Search.Search(1, 500, 10000, and, fields)
+    const client = new Search(and, Fields, 1, 500, 10000)
 
     const tile = (hit) => {
       const e = document.createElement('div')
