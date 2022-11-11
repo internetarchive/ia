@@ -8,6 +8,19 @@ const MAX_DOWNLOADS_IN_PARALLEL = 6
 const FILE_MAX_SIZE_SINGLE_READ = 50 * 1024 // files smaller than this - read in 1 `fetch()` chunk
 
 const FILEINFO = {}
+
+
+// eslint-disable-next-line prefer-arrow-callback
+document.getElementById('download-item').addEventListener('click', async function downloader() {
+  // eslint-disable-next-line no-use-before-define
+  const download = new Download(await window.showDirectoryPicker({
+    // startIn: 'desktop',
+    mode: 'readwrite',
+  }))
+  await download.download_items()
+})
+
+
 class Download {
   constructor(DIRH) {
     this.NFILES = 0
@@ -239,13 +252,3 @@ class Download {
     return filename.replace(/.*\//, '')
   }
 }
-
-
-// eslint-disable-next-line prefer-arrow-callback
-document.getElementById('download-item').addEventListener('click', async function downloader() {
-  const download = new Download(await window.showDirectoryPicker({
-    // startIn: 'desktop',
-    mode: 'readwrite',
-  }))
-  await download.download_items()
-})
