@@ -3,7 +3,7 @@
 ## Demos
 ⬇️ **[download/](download/)** ⬇️
 
-🔍 **[search/](search/)** 🔎
+🔍 **[search/](examples/search.html)** 🔎
 
 ^ some early demo / research
 
