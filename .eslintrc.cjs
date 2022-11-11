@@ -19,10 +19,7 @@ module.exports = {
   },
   ignorePatterns: [
     '**/*.min.js',
-    '**/jw/8/',
-    '**/datamaps.js',
     '**/node_modules',
-    '**/web_modules',
   ],
   rules: {
     // we use deno and `import from 'https://..' is fine
