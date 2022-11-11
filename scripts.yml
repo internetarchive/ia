@@ -37,6 +37,7 @@ scripts:
 
   test:
     - rm -rf coverage && echo>/dev/null
-    - deno test -A --coverage=coverage --location=https://av.dev.archive.org --no-check
+    - deno test -A --coverage=coverage --ignore=node_modules --no-check
+                   --location=https://internetarchive.github.io/ia/
     - deno coverage coverage --exclude=no-exclusions --lcov >| coverage/lcov.lcov && echo >/dev/null
     - lcov --derive-func-data                               -l coverage/lcov.lcov && echo >/dev/null
