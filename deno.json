@@ -1,0 +1,14 @@
+{
+  "lint": {
+    "rules": {
+      "tags": ["recommended"],
+      "exclude": [
+        "camelcase"
+      ]
+    },
+    "files": {
+      "exclude": [
+      ]
+    }
+  }
+}

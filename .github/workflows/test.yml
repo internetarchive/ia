@@ -5,8 +5,11 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     container:
-      # https://github.com/internetarchive/dyno
-      image: ghcr.io/internetarchive/dyno:main
+      # https://github.com/denoland/deno_docker
+      image: https://hub.docker.com/r/denoland/deno
     steps:
     - uses: actions/checkout@v2
-    - run: /app/lint
+    - run: |
+        deno install -qAn vr https://deno.land/x/velociraptor/cli.ts
+        vr lint
+        vr test

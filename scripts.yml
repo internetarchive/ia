@@ -1,0 +1,26 @@
+# Prerequisites:
+#     https://deno.land/manual/getting_started/installation
+#     deno install -qAn vr https://deno.land/x/velociraptor/cli.ts
+
+# Running examples (cd to any dir in this repo):
+#   vr test
+#
+# Helpful info:
+#   https://velociraptor.run/docs/vscode/
+#   https://blog.logrocket.com/exploring-velociraptor-deno-npm-style-script-runner/
+
+scripts:
+  lint:
+    - deno lint -c deno.json
+    - vr eslint
+
+  eslint:
+    # kinda dumb, but we need to call either `eslint .` or `eslint [arg1] <arg2> ..`
+    - echo . >| .lintarg; echo >> .lintarg
+    - eslint $(egrep . .lintarg |tail -1);  rm .lintarg; echo >/dev/null
+
+  test:
+    - rm -rf coverage && echo>/dev/null
+    - deno test -A --coverage=coverage --location=https://av.dev.archive.org --no-check
+    - deno coverage coverage --exclude=no-exclusions --lcov >| coverage/lcov.lcov && echo >/dev/null
+    - lcov --derive-func-data                               -l coverage/lcov.lcov && echo >/dev/null
