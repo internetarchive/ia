@@ -2,11 +2,19 @@ name: CICD
 on: push
 
 jobs:
-  lint:
+  test:
     runs-on: ubuntu-latest
     container:
-      # https://github.com/internetarchive/dyno
-      image: ghcr.io/internetarchive/dyno:main
+      # https://github.com/denoland/deno_docker
+      image: denoland/deno:alpine
     steps:
     - uses: actions/checkout@v2
-    - run: /app/lint
+    - run: |
+        deno install -qAn vr https://deno.land/x/velociraptor/cli.ts
+        # for coverage
+        apk add lcov --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing/
+        # for script command
+        apk add util-linux
+
+        vr lint
+        vr test
