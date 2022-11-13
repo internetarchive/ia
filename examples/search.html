@@ -42,7 +42,7 @@
 
     const query = ((q === '') ? new Query.QueryAnd(any, media) : new Query.QueryRaw(q))
 
-    const client = new Search(and, Fields, 1, 500, 10000)
+    const client = new Search(query, Fields, 1, 500, 10000)
 
     const tile = (hit) => {
       const e = document.createElement('div')
