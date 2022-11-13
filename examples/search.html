@@ -17,6 +17,9 @@
   <div class="card card-body bg-light">
     <center>
       <a id="js-search" class="btn btn-sm btn-primary">Find archive.org items:</a>
+      <form>
+        <input id="q" class="form-control" type="text" name="q" placeholder="" style="max-width:25%"/>
+      </form>
     </center>
   </div>
 </body>
@@ -32,9 +35,12 @@
   import log from '../util/log.js'
 
   function search() {
+    const q = document.getElementById('q').value.trim()
+    
     const any = new Query.QueryString("any", "dragon")
     const media = new Query.QueryMediaType("etree")
-    const and = new Query.QueryAnd(any, media)
+
+    const query = ((q === '') ? new Query.QueryAnd(any, media) : new Query.QueryRaw(q))
 
     const client = new Search(and, Fields, 1, 500, 10000)
 
