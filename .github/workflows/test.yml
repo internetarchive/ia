@@ -4,17 +4,16 @@ on: push
 jobs:
   test:
     runs-on: ubuntu-latest
-    container:
-      # https://github.com/denoland/deno_docker
-      image: denoland/deno:alpine
     steps:
-    - uses: actions/checkout@v2
+    # https://velociraptor.run/docs/github-actions/
+    - uses: jurassiscripts/setup-velociraptor@v2
     - run: |
-        deno install -qAn vr https://deno.land/x/velociraptor/cli.ts
+        cat /etc/issue
+        # apt-get install -yqq lcov
         # for coverage
-        apk add lcov --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing/
+        # apk add lcov --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing/
         # for script command
-        apk add util-linux
+        # apk add util-linux
 
         vr lint
         vr test
