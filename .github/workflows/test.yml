@@ -8,7 +8,7 @@ jobs:
       # https://github.com/denoland/deno_docker
       image: denoland/deno:alpine
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - run: |
         deno install -qAn vr https://deno.land/x/velociraptor/cli.ts
         # for coverage
