@@ -8,9 +8,8 @@ jobs:
     # https://velociraptor.run/docs/github-actions/
     - uses: jurassiscripts/setup-velociraptor@v2
     - run: |
-        cat /etc/issue
         # for coverage
-        apt-get install -yqq lcov
+        sudo apt-get install -yqq lcov
         # for script command
         # apk add util-linux
 
