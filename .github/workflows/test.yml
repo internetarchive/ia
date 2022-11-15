@@ -10,8 +10,6 @@ jobs:
     - run: |
         # for coverage
         sudo apt-get install -yqq lcov
-        # for script command
-        # apk add util-linux
 
         vr lint
         vr test
