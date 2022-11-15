@@ -9,9 +9,8 @@ jobs:
     - uses: jurassiscripts/setup-velociraptor@v2
     - run: |
         cat /etc/issue
-        # apt-get install -yqq lcov
         # for coverage
-        # apk add lcov --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing/
+        apt-get install -yqq lcov
         # for script command
         # apk add util-linux
 
