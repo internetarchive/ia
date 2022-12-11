@@ -22,6 +22,9 @@ module.exports = {
     '**/node_modules',
   ],
   rules: {
+    'import/no-unresolved': 'off', // xxxx temporarily off since node eslint -v- deno npm:eslint
+    // have different broken behaviour in the latter for resolving local file `import`s
+    /*
     // we use deno and `import from 'https://..' is fine
     'import/no-unresolved': [2, {
       ignore: [
@@ -33,11 +36,12 @@ module.exports = {
         '^https://deno.land/std/io/mod.ts$',
         '^https://deno.land/std/node/fs/promises.ts$',
         '^https://deno.land/std/path/mod.ts$',
-        '^https://deno.land/std/streams/conversion.ts$',
+        '^https://deno.land/std/streams/read_all.ts$',
+        '^https://deno.land/std/streams/write_all.ts$',
         '^https://deno.land/std/testing/bdd.ts$',
         '^https://esm.archive.org/',
       ],
-    }],
+    }], */
 
     // suuuuuuper userful
     'no-floating-promise/no-floating-promise': 2,

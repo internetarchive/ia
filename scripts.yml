@@ -12,13 +12,14 @@
 scripts:
   lint:
     - deno lint -c deno.json
+    - vr eslint-setup
     - vr eslint
 
   eslint-setup:
-    - deno cache --unstable --node-modules-dir npm:eslint-config-airbnb-base@14.2.0  && echo>/dev/null
-    - deno cache --unstable --node-modules-dir npm:eslint-plugin-compat              && echo>/dev/null
-    - deno cache --unstable --node-modules-dir npm:eslint-plugin-import              && echo>/dev/null
-    - deno cache --unstable --node-modules-dir npm:eslint-plugin-no-floating-promise && echo>/dev/null
+    - deno cache --node-modules-dir --unstable npm:eslint-config-airbnb-base@14.2.0  && echo>/dev/null
+    - deno cache --node-modules-dir --unstable npm:eslint-plugin-compat              && echo>/dev/null
+    - deno cache --node-modules-dir --unstable npm:eslint-plugin-import              && echo>/dev/null
+    - deno cache --node-modules-dir --unstable npm:eslint-plugin-no-floating-promise && echo>/dev/null
 
   eslint:
     # We want to call either `eslint .` or `eslint [arg1] <arg2> ..`
@@ -27,7 +28,7 @@ scripts:
     # Unfortunately right now running deno like this always exits 0, regardless.
     # Lint warnings/errors write to stdout -- so capture that to a file and check after if empty.
     # Wrap that with `script` command so the invoker will still see the useful colors in the output.
-    - script -q .testout sh -c "deno run -A --unstable --node-modules-dir  npm:eslint@^7.32.0
+    - script -q .testout sh -c "deno run -A --node-modules-dir --unstable  npm:eslint@^7.32.0
         $(egrep . .testarg |tail -1) 2>/dev/null" &&  echo>/dev/null
     - rm .testarg; echo>/dev/null
     # .testout should be empty -- else a lint failure (remove any docker runtime start/stop logs)
@@ -39,5 +40,5 @@ scripts:
     - rm -rf coverage && echo>/dev/null
     - deno test -A --coverage=coverage --ignore=node_modules --no-check
                    --location=https://internetarchive.github.io/ia/
-    - deno coverage coverage --exclude=no-exclusions --lcov >| coverage/lcov.lcov && echo >/dev/null
-    - lcov --derive-func-data                               -l coverage/lcov.lcov && echo >/dev/null
+    - deno coverage coverage --exclude=no-exclusions --lcov >| coverage/lcov.lcov && echo>/dev/null
+    - lcov --derive-func-data                               -l coverage/lcov.lcov && echo>/dev/null
