@@ -1,7 +1,7 @@
 # 🏛️ Internet Archive JS API 🏛️
 
 ## Demos
-⬇️ **[download/](download/)** ⬇️
+⬇️ **[download/](examples/download.html)** ⬇️
 
 🔍 **[search/](examples/search.html)** 🔎
 
