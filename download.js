@@ -1,5 +1,7 @@
 import $ from 'https://esm.archive.org/jquery'
 import log from './util/log.js'
+import Result from './lib/result.js'
+import { DownloadQueue } from './lib/queue.js'
 
 window.$ = $ // handy for dev tools debugging
 
@@ -8,7 +10,6 @@ const MAX_DOWNLOADS_IN_PARALLEL = 6
 const FILE_MAX_SIZE_SINGLE_READ = 50 * 1024 // files smaller than this - read in 1 `fetch()` chunk
 
 const FILEINFO = {}
-
 
 // eslint-disable-next-line prefer-arrow-callback
 document.getElementById('download-item').addEventListener('click', async function downloader() {
@@ -19,7 +20,6 @@ document.getElementById('download-item').addEventListener('click', async functio
   }))
   await download.download_items()
 })
-
 
 class Download {
   constructor(DIRH) {
@@ -35,6 +35,15 @@ class Download {
     this.progress_msg(`downloading: ${IAIDS.length} items`, '#progress_items')
 
     let done_num_ids = 0
+
+    const results = []
+    IAIDS.array.forEach((id) => {
+      results.push(new Result(id))
+    })
+
+    const queue = new DownloadQueue(10, 5, (file, size, md5) => {
+      this.progress_msg(`downloading: ${size} files from item ${IAID}`, '#progress_files')
+    }, ...results)
 
     for (const IAIDin of IAIDS) {
       const IAID = IAIDin.trim()
