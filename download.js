@@ -42,7 +42,7 @@ class Download {
     })
 
     const queue = new DownloadQueue(10, 5, (file, size, md5) => {
-      this.progress_msg(`downloading: ${size} files from item ${IAID}`, '#progress_files')
+      this.progress_msg(`downloading: ${size} files from item ${file.name}`, '#progress_files')
     }, ...results)
 
     for (const IAIDin of IAIDS) {
