@@ -8,7 +8,7 @@
             "request": "launch",
             "name": "Launch Program",
             "type": "node",
-            "program": "${workspaceFolder}/lib/test.js",
+            "program": "${workspaceFolder}/lib/example.js",
             "cwd": "${workspaceFolder}",
             "runtimeExecutable": "/opt/brew/bin/deno",
             "runtimeArgs": [
