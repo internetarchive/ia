@@ -43,7 +43,7 @@ describe('Search', () => {
   it('Over Max', () => {
     assertThrows(() => new Search(query, Fields, 1, 100, 10001, 5))
   })
-  it('Upstream Error', async () => {
+  it('Upstream Error', () => {
     const client = new Search(new Query.QueryRaw('-(-'), Fields, 1, 100, 10000, 5)
 
     const results = []

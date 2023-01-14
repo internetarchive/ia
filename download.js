@@ -1,7 +1,5 @@
 import $ from 'https://esm.archive.org/jquery'
 import log from './util/log.js'
-import Result from './lib/result.js'
-import { DownloadQueue } from './lib/queue.js'
 
 window.$ = $ // handy for dev tools debugging
 
@@ -35,15 +33,6 @@ class Download {
     this.progress_msg(`downloading: ${IAIDS.length} items`, '#progress_items')
 
     let done_num_ids = 0
-
-    const results = []
-    IAIDS.array.forEach((id) => {
-      results.push(new Result(id))
-    })
-
-    const queue = new DownloadQueue(10, 5, (file, size, md5) => {
-      this.progress_msg(`downloading: ${size} files from item ${file.name}`, '#progress_files')
-    }, ...results)
 
     for (const IAIDin of IAIDS) {
       const IAID = IAIDin.trim()
