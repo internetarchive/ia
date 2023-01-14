@@ -70,7 +70,7 @@ describe('Queue', () => {
       assertEquals(queue.downloadErrors(), {})
     })
     it('Bad Resume', async () => {
-      const queue = new Queue.DownloadQueue(10, 5, async (file, stream) => {
+      const queue = new Queue.DownloadQueue(10, 5, (file, stream) => {
         console.log(file.name)
         stream.cancel()
       }, ...results)
