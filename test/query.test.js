@@ -87,14 +87,14 @@ describe('Query', () => {
 
   describe('Dates', () => {
     it('Simple', () => {
-      const date = new Query.QueryDate('12/22/2023 00:00')
+      const date = new Query.QueryDate('12/22/2023 00:00 UTC')
 
-      assertEquals(date.encode(), 'date:2023-12-22T07:00:00.000Z')
+      assertEquals(date.encode(), 'date:2023-12-22T00:00:00.000Z')
     })
     it('Range', () => {
-      const date = new Query.QueryDate('12/22/2023 00:00', '12/23/2023 00:00')
+      const date = new Query.QueryDate('12/22/2023 00:00 UTC', '12/23/2023 00:00 UTC')
 
-      assertEquals(date.encode(), 'date:[2023-12-22T07:00:00.000Z TO 2023-12-23T07:00:00.000Z]')
+      assertEquals(date.encode(), 'date:[2023-12-22T00:00:00.000Z TO 2023-12-23T00:00:00.000Z]')
     })
     it('From Type', () => {
       assertThrows(() => new Query.QueryDate('bleep'))
