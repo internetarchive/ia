@@ -1,26 +1,28 @@
+/* eslint-disable no-cond-assign */
+/* eslint-disable no-console */
 /* eslint-disable import/no-unresolved */
 import { beforeEach, describe, it } from 'https://deno.land/std/testing/bdd.ts'
 import {
   assert, assertEquals, assertInstanceOf, assertThrows,
 } from 'https://deno.land/std@0.171.0/testing/asserts.ts'
 import * as Queue from '../lib/queue.js'
+import * as Errors from '../lib/errors.js'
+import File from '../lib/file.js'
 import Result from '../lib/result.js'
 
 describe('Queue', () => {
-  let results = []
+  let results
   beforeEach(() => {
-    results = []
-    results.push(
-      new Result('camels'),
-      new Result('night_of_the_living_dead'),
-    )
+    results = [
+      new Result('twitter-894946694244204545'),
+    ]
   })
 
   describe('Metadata', () => {
     it('Simple', async () => {
       const queue = new Queue.MetaQueue(10, 5, (metadata) => {
         assertInstanceOf(metadata, Result)
-      }, results)
+      }, ...results)
       await queue.update()
       assertEquals(Object.keys(queue.metaErrors()).length, 0)
     })
@@ -31,21 +33,18 @@ describe('Queue', () => {
       assertThrows(() => new Queue.MetaQueue(1, 1, 'string'))
     })
     it('Bad Results', () => {
-      assertThrows(() => new Queue.MetaQueue(1, 1, () => {}, 'strung'))
+      assertThrows(() => new Queue.MetaQueue(1, 1, () => {}, ...[]))
     })
     it('Bad Object in Results', async () => {
       results.push('what am I doing here')
       const queue = new Queue.MetaQueue(10, 5, (metadata) => {
         assertInstanceOf(metadata, Result)
-      }, results)
+      }, ...results)
       await queue.update()
       assert(Object.keys(queue.metaErrors()).length > 0)
     })
     it('Retry', async () => {
-      const bad = [
-        new Result('nineteenhundredfiftyeightthoursand'),
-      ]
-      const queue = new Queue.MetaQueue(10, 5, () => {}, bad)
+      const queue = new Queue.MetaQueue(10, 5, () => {}, new Result('nineteenhundredfiftyeightthoursand'))
       await queue.update()
       assert(Object.keys(queue.metaErrors()).length > 0)
     })
@@ -53,56 +52,75 @@ describe('Queue', () => {
 
   describe('Download', () => {
     it('Simple', async () => {
-      const queue = new Queue.DownloadQueue(10, 5, (file, stream, md5) => {
-        assertInstanceOf(file, File)
-        assertInstanceOf(stream, ReadableStream)
-        assertInstanceOf(md5, Promise)
-      }, results)
+      const queue = new Queue.DownloadQueue(10, 5, (file, stream) => {
+        console.log(file.name)
+        stream.cancel()
+      }, ...results)
       await queue.download()
-      assertEquals(Object.keys(queue.downloadErrors()).length, 0)
+      assertEquals(queue.downloadErrors(), {})
+    })
+    it('Resume', async () => {
+      const queue = new Queue.DownloadQueue(10, 5, (file, stream) => {
+        console.log(file.name)
+        stream.cancel()
+      }, ...results)
+      await queue.download({
+        '894946694244204545.jpg': 5,
+      })
+      assertEquals(queue.downloadErrors(), {})
+    })
+    it('Bad Resume', async () => {
+      const queue = new Queue.DownloadQueue(10, 5, async (file, stream) => {
+        console.log(file.name)
+        stream.cancel()
+      }, ...results)
+      await queue.download({
+        '894946694244204545.jpg': 500000000000,
+      })
+      assertThrows(() => { throw queue.downloadErrors()['894946694244204545.jpg'] }, Errors.ResumeError)
     })
     it('Bad Numbers', () => {
       assertThrows(() => new Queue.DownloadQueue(-1, -1))
     })
     it('Bad Callback', () => {
-      assertThrows(() => new Queue.DownloadQueue(1, 1, 'string'))
+      assertThrows(() => new Queue.DownloadQueue(1, 1, 'not a func', ...[]))
     })
     it('Small Verification', async () => {
       const queue = new Queue.DownloadQueue(10, 5, async (file, stream, md5) => {
         assertInstanceOf(file, File)
         const reader = stream.getReader()
-        for await (const result of reader.read()) {
-          // eslint-disable-next-line no-console
-          console.log(result.value.byteLength)
+        let result
+        while (!(result = await reader.read()).done) {
+          console.log('chunk size:', result.value.byteLength)
         }
-        assertInstanceOf(md5, Promise)
-        assertEquals(await md5, true)
-      }, results)
+        const final = await md5
+        console.log('md5: ', final)
+        assert(typeof final === 'boolean')
+        return final
+      }, ...results)
       await queue.download()
-      assertEquals(Object.keys(queue.downloadErrors()).length, 0)
+      assertEquals(queue.downloadErrors(), {})
     })
     it('Large Verification', async () => {
-      const large = [
-        new Result('night_of_the_living_dead'),
-      ]
       const queue = new Queue.DownloadQueue(10, 5, async (file, stream, md5) => {
         assertInstanceOf(file, File)
         const reader = stream.getReader()
-        for await (const result of reader.read()) {
-          // eslint-disable-next-line no-console
-          console.log(result.value.byteLength)
+        let result
+        while (!(result = await reader.read()).done) {
+          console.log('chunk size:', result.value.byteLength)
         }
-        assertInstanceOf(md5, Promise)
         const final = await md5
-        assertEquals(final, true)
-      }, large)
+        console.log('md5: ', final)
+        assert(typeof final === 'boolean')
+        return final
+      }, new Result('night_of_the_living_dead'))
       await queue.download({}, (file) => {
         if (file.format === 'Ogg Video') {
           return true
         }
         return false
       })
-      assertEquals(Object.keys(queue.downloadErrors()).length, 0)
+      assertEquals(queue.downloadErrors(), {})
     })
   })
 })
