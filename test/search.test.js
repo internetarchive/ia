@@ -17,7 +17,7 @@ describe('Search', () => {
   })
 
   it('Any Dragon', async () => {
-    const client = new Search(query, Fields, 1, 10000, 3)
+    const client = new Search(query, Fields, 1, 500, 10000, 3)
 
     const results = []
     for await (const result of client) {
@@ -25,7 +25,7 @@ describe('Search', () => {
     }
   })
   it('Callback', async () => {
-    const client = new Search(query, Fields, 1, 10000, 3)
+    const client = new Search(query, Fields, 1, 500, 10000, 3)
 
     await client.renderCallback((results) => {
       results.forEach((result) => assertInstanceOf(result, Result))
