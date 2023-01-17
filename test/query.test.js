@@ -2,6 +2,7 @@
 import { beforeEach, describe, it } from 'https://deno.land/std/testing/bdd.ts'
 import { assertEquals, assertThrows } from 'https://deno.land/std@0.171.0/testing/asserts.ts'
 import * as Query from '../lib/query.js'
+import * as Errors from '../lib/errors.js'
 
 describe('Query', () => {
   it('Raw', () => {
@@ -10,11 +11,27 @@ describe('Query', () => {
     assertEquals(query.encode(), '(cat videos)')
   })
 
-  it('Not', () => {
-    const any = new Query.QueryString('any', 'hello')
-    const query = new Query.QueryNot(any)
+  describe('Not', () => {
+    let any
+    let query
+    beforeEach(() => {
+      any = new Query.QueryString('any', 'hello')
+      query = new Query.QueryNot(any)
+    })
 
-    assertEquals(query.encode(), '(NOT (hello))')
+    it('Simple', () => {
+      assertEquals(query.encode(), '(NOT (hello))')
+    })
+
+    it('Bad Type', () => {
+      assertThrows(() => new Query.QueryNot([]), Errors.QueryTypeError)
+    })
+
+    it('Bad Encode', () => {
+      const obj = { encode: () => { throw new Error('what am I doing here') } }
+      const not = new Query.QueryNot(obj)
+      assertThrows(() => not.encode(), Errors.QueryEncodeError)
+    })
   })
 
   describe('Conjunctions', () => {
