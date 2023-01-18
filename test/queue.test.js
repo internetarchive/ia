@@ -44,7 +44,7 @@ describe('Queue', () => {
       assert(Object.keys(queue.metaErrors()).length > 0)
     })
     it('Retry', async () => {
-      const queue = new Queue.MetaQueue(10, 5, () => {}, new Result('nineteenhundredfiftyeightthoursand'))
+      const queue = new Queue.MetaQueue(10, 2, () => {}, new Result('nineteenhundredfiftyeightthoursand'))
       await queue.update()
       assert(Object.keys(queue.metaErrors()).length > 0)
     })
@@ -70,7 +70,7 @@ describe('Queue', () => {
       assertEquals(queue.downloadErrors(), {})
     })
     it('Bad Resume', async () => {
-      const queue = new Queue.DownloadQueue(10, 5, (file, stream) => {
+      const queue = new Queue.DownloadQueue(10, 7, (file, stream) => {
         console.log(file.name)
         stream.cancel()
       }, ...results)
