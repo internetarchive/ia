@@ -31,6 +31,20 @@ describe('Search', () => {
       results.forEach((result) => assertInstanceOf(result, Result))
     })
   })
+  describe('Bad Query', () => {
+    let object
+    beforeEach(() => {
+      object = {}
+    })
+    it('Bad Method', () => {
+      object.encode = 'hi'
+      assertThrows(() => new Search(object, Fields, 1, 500, 10000, 3), TypeError)
+    })
+    it('Bad Encode', () => {
+      object.encode = () => 1
+      assertThrows(() => new Search(object, Fields, 1, 500, 10000, 3), TypeError)
+    })
+  })
   it('Negative', () => {
     assertThrows(() => new Search(query, Fields, -1, -1, -1, -1))
   })
