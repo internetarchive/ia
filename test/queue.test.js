@@ -24,7 +24,7 @@ describe('Queue', () => {
         assertInstanceOf(metadata, Result)
       }, ...results)
       await queue.update()
-      assertEquals(Object.keys(queue.metaErrors()).length, 0)
+      assertEquals(queue.metaErrorMap.size, 0)
     })
     it('Bad Numbers', () => {
       assertThrows(() => new Queue.MetaQueue(-1, -1))
@@ -41,12 +41,12 @@ describe('Queue', () => {
         assertInstanceOf(metadata, Result)
       }, ...results)
       await queue.update()
-      assert(Object.keys(queue.metaErrors()).length > 0)
+      assert(queue.metaErrorMap.size > 0)
     })
     it('Retry', async () => {
       const queue = new Queue.MetaQueue(10, 2, () => {}, new Result('nineteenhundredfiftyeightthoursand'))
       await queue.update()
-      assert(Object.keys(queue.metaErrors()).length > 0)
+      assert(queue.metaErrorMap.size > 0)
     })
   })
 
@@ -57,7 +57,7 @@ describe('Queue', () => {
         stream.cancel()
       }, ...results)
       await queue.download()
-      assertEquals(queue.downloadErrors(), {})
+      assertEquals(queue.downloadErrorMap.size, 0)
     })
     it('Resume', async () => {
       const queue = new Queue.DownloadQueue(10, 5, (file, stream) => {
@@ -67,7 +67,7 @@ describe('Queue', () => {
       await queue.download({
         '894946694244204545.jpg': 5,
       })
-      assertEquals(queue.downloadErrors(), {})
+      assertEquals(queue.downloadErrorMap.size, 0)
     })
     it('Bad Resume', async () => {
       const queue = new Queue.DownloadQueue(10, 7, (file, stream) => {
@@ -77,7 +77,7 @@ describe('Queue', () => {
       await queue.download({
         '894946694244204545.jpg': 500000000000,
       })
-      assertThrows(() => { throw queue.downloadErrors()['894946694244204545.jpg'] }, Errors.ResumeError)
+      assertThrows(() => { throw queue.downloadErrorMap.get('894946694244204545.jpg') }, Errors.ResumeError)
     })
     it('Bad Numbers', () => {
       assertThrows(() => new Queue.DownloadQueue(-1, -1))
@@ -99,7 +99,7 @@ describe('Queue', () => {
         return final
       }, ...results)
       await queue.download()
-      assertEquals(queue.downloadErrors(), {})
+      assertEquals(queue.downloadErrorMap.size, 0)
     })
     it('Large Verification', async () => {
       const queue = new Queue.DownloadQueue(10, 5, async (file, stream, md5) => {
@@ -120,7 +120,7 @@ describe('Queue', () => {
         }
         return false
       })
-      assertEquals(queue.downloadErrors(), {})
+      assertEquals(queue.downloadErrorMap.size, 0)
     })
   })
 })
