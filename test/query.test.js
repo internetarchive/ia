@@ -5,10 +5,15 @@ import * as Query from '../lib/query.js'
 import * as Errors from '../lib/errors.js'
 
 describe('Query', () => {
-  it('Raw', () => {
-    const query = new Query.QueryRaw('cat videos')
+  describe('Raw', () => {
+    it('Simple', () => {
+      const query = new Query.QueryRaw('cat videos')
 
-    assertEquals(query.encode(), '(cat videos)')
+      assertEquals(query.encode(), '(cat videos)')
+    })
+    it('Bad Type', () => {
+      assertThrows(() => new Query.QueryRaw({}))
+    })
   })
 
   describe('Not', () => {
@@ -76,8 +81,14 @@ describe('Query', () => {
 
       assertEquals(query.encode(), '-(cats)')
     })
-    it('Type', () => {
+    it('Bad Type', () => {
       assertThrows(() => new Query.QueryString('cats', 'kittens'))
+    })
+    it('Bad String', () => {
+      assertThrows(() => new Query.QueryString('title', {}))
+    })
+    it('Bad Booleans', () => {
+      assertThrows(() => new Query.QueryString('title', 'kittens', {}, {}))
     })
   })
 
@@ -97,8 +108,11 @@ describe('Query', () => {
 
       assertEquals(query.encode(), '-mediaType:()')
     })
-    it('Type', () => {
+    it('Bad Type', () => {
       assertThrows(() => Query.QueryMediaType('box'))
+    })
+    it('Bad Boolean', () => {
+      assertThrows(() => Query.QueryMediaType('account', {}))
     })
   })
 
@@ -135,11 +149,14 @@ describe('Query', () => {
     it('Bad Type', () => {
       assertThrows(() => new Query.QueryRange('nowhere', 0, 5))
     })
-    it('From Type', () => {
+    it('Bad From Type', () => {
       assertThrows(() => new Query.QueryRange('imagecount', 'a', 5))
     })
-    it('To Type', () => {
+    it('Bad To Type', () => {
       assertThrows(() => new Query.QueryRange('imagecount', 0, 'b'))
+    })
+    it('Bad Include Type', () => {
+      assertThrows(() => new Query.QueryRange('imagecount', 0, 1, {}))
     })
   })
 })
