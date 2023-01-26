@@ -48,8 +48,8 @@
       const e = document.createElement('div')
       e.classList = 'tile card card-body bg-light'
       e.innerHTML = `
-<a href="https://archive.org/details/${hit.identifier}">
-  <img src="https://archive.org/services/img/${hit.identifier}"/>
+<a href="${hit.detailsURL}">
+  <img src="${hit.imageURL}"/>
   <h3>${hit.title}</h3>
   <i>Date: ${hit.publicdate}</i><hr>
   ${hit.description}
