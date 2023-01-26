@@ -1,4 +1,5 @@
 import FieldTable from '../lib/fields.js'
+import { QueryRaw } from '../lib/query.js'
 import Search from '../lib/search.js'
 
 function searchCommands(main) {
@@ -13,7 +14,7 @@ function searchCommands(main) {
       page, rows, end, retry, identifiers,
     }, input) => {
       const client = new Search(
-        input,
+        new QueryRaw(input),
         FieldTable,
         page,
         rows,

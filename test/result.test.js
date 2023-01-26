@@ -1,7 +1,8 @@
+/* eslint-disable no-console */
 /* eslint-disable import/no-unresolved */
 import { beforeEach, describe, it } from 'https://deno.land/std/testing/bdd.ts'
 import {
-  assertEquals, assertExists, assertInstanceOf, assertThrows,
+  assert, assertEquals, assertExists, assertInstanceOf, assertThrows,
 } from 'https://deno.land/std@0.171.0/testing/asserts.ts'
 import * as Errors from '../lib/errors.js'
 import File from '../lib/file.js'
@@ -24,7 +25,7 @@ describe('Result', () => {
       assertEquals(result.downloadURL, undefined)
     })
 
-    describe('Metadata', () => {
+    describe('Metadata/Download', () => {
       beforeEach(async () => {
         await result.metadata()
       })
@@ -41,6 +42,24 @@ describe('Result', () => {
         result.files.forEach((file) => {
           assertEquals(file.parent, result)
         })
+      })
+      it('Download', async () => {
+        for (let x = 0; x < result.files.length; x++) {
+          const file = result.files[x]
+          if (file.format === 'MPEG2') {
+            const blob = await file.download()
+            const reader = blob.stream.getReader()
+            assertEquals(file, blob.file)
+            let item
+            // eslint-disable-next-line no-cond-assign
+            while (!(item = await reader.read()).done) {
+              console.log('chunk size:', item.value.byteLength)
+            }
+            const final = await blob.md5
+            console.log('md5: ', final)
+            assert(typeof final === 'boolean')
+          }
+        }
       })
     })
   })

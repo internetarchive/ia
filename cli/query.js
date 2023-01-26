@@ -46,6 +46,7 @@ function queryCommands(main) {
       to,
       include,
     ).encode())
+
   const queryOperator = query.command('operator', 'Operator collection for logical components.')
   queryOperator.command('and', 'And logical operator.')
     .arguments('[queries:string] <output:string>')
