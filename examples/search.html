@@ -47,14 +47,18 @@
     const tile = (hit) => {
       const e = document.createElement('div')
       e.classList = 'tile card card-body bg-light'
-      e.innerHTML = `
-<a href="${hit.detailsURL}">
-  <img src="${hit.imageURL}"/>
-  <h3>${hit.title}</h3>
-  <i>Date: ${hit.publicdate}</i><hr>
-  ${hit.description}
-</a>
-`
+      e.innerHTML = `<a>
+        <img/>
+        <h3></h3>
+        <i>...</i><hr>
+        <p></p>
+      </a>`
+      e.querySelector('a').href = hit.detailsURL;
+      e.querySelector('img').src = hit.imageURL;
+      e.querySelector('h3').innerText = hit.title;
+      e.querySelector('i').innerText = "Date: "+hit.publicdate;
+      e.querySelector('p').innerText = hit.description;
+
       document.body.appendChild(e)
     }
 
