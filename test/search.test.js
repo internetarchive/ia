@@ -48,20 +48,17 @@ describe('Search', () => {
   it('Negative', () => {
     assertThrows(() => new Search(query, Fields, -1, -1, -1, -1))
   })
-  it('No Fields', () => {
-    assertThrows(() => new Search(query, undefined, -1, -1, -1, -1))
+  it('Bad Fields', () => {
+    assertThrows(() => new Search(query, {}, 1, 500, 10000, 3))
   })
   it('No Query', () => {
-    assertThrows(() => new Search(undefined, Fields, -1, -1, -1, -1))
+    assertThrows(() => new Search(undefined, Fields, 1, 500, 10000, 3))
   })
   it('Over Max', () => {
-    assertThrows(() => new Search(query, Fields, 1, 100, 10001, 5))
-  })
-  it('Bad Fields', () => {
-    assertThrows(() => new Search(query, {}, 1, 100, 10000, 5))
+    assertThrows(() => new Search(query, Fields, 1, 500, 10001, 3))
   })
   it('Upstream Error', () => {
-    const client = new Search(new Query.QueryRaw('-(-'), Fields, 1, 100, 10000, 5)
+    const client = new Search(new Query.QueryRaw('-(-'), Fields, 1, 500, 10000, 3)
 
     const results = []
     assertThrows(Errors.ElasticSearchError, async () => {
@@ -73,7 +70,7 @@ describe('Search', () => {
     assertEquals(results.length, 0)
   })
   it('Bad URL', async () => {
-    const client = new Search(query, Fields, 1, 100, 10000, 2)
+    const client = new Search(query, Fields, 1, 500, 10000, 2)
     client.searchURL = 'https://archive.org/advancedsearch.phps'
 
     let f
