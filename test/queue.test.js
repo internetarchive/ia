@@ -69,6 +69,16 @@ describe('Queue', () => {
       })
       assertEquals(queue.downloadErrorMap.size, 0)
     })
+    it('Less than 0 Resume', async () => {
+      const queue = new Queue.DownloadQueue(10, 7, (file, stream) => {
+        console.log(file.name)
+        stream.cancel()
+      }, ...results)
+      await queue.download({
+        '894946694244204545.jpg': -5,
+      })
+      assertThrows(() => { throw queue.downloadErrorMap.get('894946694244204545.jpg') }, Errors.ResumeError)
+    })
     it('Bad Resume', async () => {
       const queue = new Queue.DownloadQueue(10, 7, (file, stream) => {
         console.log(file.name)
