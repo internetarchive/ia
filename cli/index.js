@@ -7,7 +7,7 @@ import queueCommands from './queue.js'
 const logLevelType = new EnumType(['debug', 'info', 'warn', 'error'])
 
 async function ia() {
-  const main = new Command()
+  await new Command()
     .name('ia')
     .version('0.1.0')
     .description('Command line interface for interacting with IA APIs.')
@@ -17,12 +17,10 @@ async function ia() {
     .globalOption('-l, --log-level <level:log-level>', 'Set log level.', {
       default: 'info',
     })
-
-  queryCommands(main)
-  searchCommands(main)
-  queueCommands(main)
-
-  await main.parse(Deno.args)
+    .command('query', queryCommands())
+    .command('search', searchCommands())
+    .command('queue', queueCommands())
+    .parse(Deno.args)
 }
 
 if (import.meta.main) {
