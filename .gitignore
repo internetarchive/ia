@@ -1,3 +1,5 @@
 coverage
 deno.lock
 node_modules
+bin/
+artifacts/

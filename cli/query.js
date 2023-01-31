@@ -32,9 +32,8 @@ function queryCommands() {
       string,
     ).encode()))
     .command('date', 'Date type for query.')
-    .option('-t, --to <val:string>', 'Include dates up to.')
-    .arguments('<date:string>')
-    .action(({ to }, date) => console.log(new QueryDate(
+    .arguments('<date:string> [to:string]')
+    .action(({}, date, to) => console.log(new QueryDate(
       date,
       to,
     ).encode()))
@@ -49,14 +48,14 @@ function queryCommands() {
       include,
     ).encode()))
     .command('and', 'And logical operator.')
-    .arguments('[queries:string]')
+    .arguments('<queries:string>')
     .action(({}, ...queries) => {
       const collection = []
       queries.forEach((item) => collection.push(new QueryRaw(item)))
       console.log(new QueryAnd(...collection).encode())
     })
     .command('or', 'Or logical operator.')
-    .arguments('[queries:string]')
+    .arguments('<queries:string>')
     .action(({}, ...queries) => {
       const collection = []
       queries.forEach((item) => collection.push(new QueryRaw(item)))
