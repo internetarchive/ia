@@ -48,14 +48,14 @@ function queryCommands() {
       include,
     ).encode()))
     .command('and', 'And logical operator.')
-    .arguments('<queries:string>')
+    .arguments('<queries...>')
     .action(({}, ...queries) => {
       const collection = []
       queries.forEach((item) => collection.push(new QueryRaw(item)))
       console.log(new QueryAnd(...collection).encode())
     })
     .command('or', 'Or logical operator.')
-    .arguments('<queries:string>')
+    .arguments('<queries...>')
     .action(({}, ...queries) => {
       const collection = []
       queries.forEach((item) => collection.push(new QueryRaw(item)))

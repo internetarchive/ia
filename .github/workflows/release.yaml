@@ -15,7 +15,7 @@ jobs:
         mkdir -p ./bin ./artifacts
         TARGETS=("x86_64-unknown-linux-gnu" "aarch64-unknown-linux-gnu" "x86_64-pc-windows-msvc" "x86_64-apple-darwin" "aarch64-apple-darwin")
         for target in ${TARGETS[@]}; do
-          deno compile -A --output ./bin/ia ./cli/index.js
+          deno compile -A --location=https://archive.org --target=$target --output ./bin/ia ./cli/index.js
           tar -czf ./artifacts/$target.tar.gz ./bin
           rm -f ./bin/ia
         done
