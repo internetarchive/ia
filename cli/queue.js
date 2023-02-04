@@ -6,8 +6,8 @@ import Result from '../lib/result.js'
 
 function queueCommands() {
   return new Command()
-    .globalOption('-p, --parallel', 'Number of fetch requests to run in parallel.')
-    .globalOption('-r, --retry', 'Maximum times for each item to be retried.')
+    .globalOption('-p, --parallel <val:number>', 'Number of fetch requests to run in parallel.')
+    .globalOption('-r, --retry <val:number>', 'Maximum times for each item to be retried.')
     .command('metadata', 'Fetch and display in-depth metadata of each identifier.')
     .option('--jsonl <val:boolean>', 'Print one object out per-line.', { default: false })
     .arguments('[input...]')
@@ -49,33 +49,43 @@ function queueCommands() {
         for await (const item of Deno.readDir(dir)) {
           const sub = `${dir}/${item.name}`
           if (!item.isDirectory) {
-            resume[item.name] = (await Deno.lstat(sub)).size
+            resume[sub.slice(directory.length + 1)
+              .split('/')
+              .slice(1)
+              .join('/')
+            ] = (await Deno.lstat(sub)).size
           } else {
-            populateResume(sub)
+            await populateResume(sub)
           }
         }
       }
       await populateResume(directory)
       const cb = async (file, stream, md5) => {
         const create = (resume[file.name] === undefined)
-        const open = await Deno.open(
-          `${directory}/${file.parent.identifier}/${file.name}`, {
+        const path = `${directory}/${file.parent.identifier}/${file.name}`
+        await Deno.mkdir(path
+          .split('/')
+          .slice(0, -1)
+          .join('/'), { recursive: true })
+        const handle = await Deno.open(
+          path, {
             create,
             write: create,
             append: !create,
           },
         )
-        await stream.pipeTo(open.writable)
-        open.close()
+        await stream.pipeTo(handle.writable)
         console.log(file.name, await md5)
       }
-      const metadata = new DownloadQueue(
+      const results = []
+      input.forEach((identifier) => results.push(new Result(identifier)))
+      const download = new DownloadQueue(
         parallel,
         retry,
         cb,
-        ...input,
+        ...results,
       )
-      await metadata.download(resume)
+      await download.download(resume)
     })
 }
 
