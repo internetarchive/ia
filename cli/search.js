@@ -12,10 +12,11 @@ function searchCommands() {
     .option('-r, --rows <val:number>', 'Number of rows to return.', { default: 500 })
     .option('-e, --end <val:number>', 'Number of records in total to return.', { default: 10000 })
     .option('--retry <val:number>', 'Number of retry attempts per paginated requrest.', { default: 5 })
-    .option('-i, --identifiers <val:boolean>', 'Only return identifiers, useful to input directly into queue.', { default: true })
+    .option('-i, --identifiers <val:boolean>', 'Only return identifiers, one per line, useful to input directly into queue.', { default: true })
+    .option('--jsonl <val:boolean>', 'Print one object out per-line. Incompatible with --identifiers', { default: false })
     .arguments('[input:string]')
     .action(async ({
-      page, rows, end, retry, identifiers,
+      page, rows, end, retry, identifiers, jsonl,
     }, input) => {
       if (input === undefined) {
         input = ''
@@ -33,13 +34,13 @@ function searchCommands() {
       )
       const results = []
       for await (const result of client) {
-        if (!identifiers) {
-          results.push(...result)
-        } else {
-          result.forEach((item) => results.push(item.identifier))
-        }
+        results.push(...result)
       }
-      console.log(identifiers ? results.join('\n') : JSON.stringify(results))
+      if (jsonl || identifiers) {
+        results.forEach((item) => console.log(identifiers ? item.identifier : JSON.stringify(item)))
+      } else {
+        console.log(JSON.stringify(results))
+      }
     })
 }
 

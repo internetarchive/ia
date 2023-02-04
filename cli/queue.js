@@ -9,8 +9,9 @@ function queueCommands() {
     .globalOption('-p, --parallel', 'Number of fetch requests to run in parallel.')
     .globalOption('-r, --retry', 'Maximum times for each item to be retried.')
     .command('metadata', 'Fetch and display in-depth metadata of each identifier.')
+    .option('--jsonl <val:boolean>', 'Print one object out per-line.', { default: false })
     .arguments('[input...]')
-    .action(async ({ parallel, retry }, ...input) => {
+    .action(async ({ parallel, retry, jsonl }, ...input) => {
       if (input.length === 0) {
         for await (const line of readLines(Deno.stdin)) {
           input.push(line)
@@ -28,7 +29,11 @@ function queueCommands() {
       await metadata.update()
       // eslint-disable-next-line no-param-reassign
       meta.forEach((item) => item.files.forEach((file) => delete file.parent))
-      console.log(JSON.stringify(meta))
+      if (jsonl) {
+        meta.forEach((item) => console.log(JSON.stringify(item)))
+      } else {
+        console.log(JSON.stringify(meta))
+      }
     })
     .command('download', 'Fetch and download files from each identifier.')
     .option('--resume <val:boolean>', 'Enable resuming files.')
