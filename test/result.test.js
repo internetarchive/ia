@@ -46,17 +46,20 @@ describe('Result', () => {
       it('Download', async () => {
         for (let x = 0; x < result.files.length; x++) {
           const file = result.files[x]
-          if (file.format === 'MPEG2') {
+          if (file.format === 'Ogg Video') {
             const { stream, md5 } = await file.download()
             const reader = stream.getReader()
             let chunk
+            let size = 0
             // eslint-disable-next-line no-cond-assign
             while (!(chunk = await reader.read()).done) {
               console.log('chunk size:', chunk.value.byteLength)
+              size += chunk.value.byteLength
             }
             const final = await md5
             console.log('md5: ', final)
             assert(typeof final === 'boolean')
+            assertEquals(size, Number(file.size))
           }
         }
       })

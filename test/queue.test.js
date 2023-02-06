@@ -100,12 +100,15 @@ describe('Queue', () => {
         assertInstanceOf(file, File)
         const reader = stream.getReader()
         let result
+        let size = 0
         while (!(result = await reader.read()).done) {
           console.log('chunk size:', result.value.byteLength)
+          size += result.value.byteLength
         }
         const final = await md5
         console.log('md5: ', final)
         assert(typeof final === 'boolean')
+        assertEquals(size, Number(file.size))
         return final
       }, ...results)
       await queue.download()
@@ -116,12 +119,15 @@ describe('Queue', () => {
         assertInstanceOf(file, File)
         const reader = stream.getReader()
         let result
+        let size = 0
         while (!(result = await reader.read()).done) {
           console.log('chunk size:', result.value.byteLength)
+          size += result.value.byteLength
         }
         const final = await md5
         console.log('md5: ', final)
         assert(typeof final === 'boolean')
+        assertEquals(size, Number(file.size))
         return final
       }, new Result('night_of_the_living_dead'))
       await queue.download({}, (file) => {
