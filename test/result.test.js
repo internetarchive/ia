@@ -47,15 +47,14 @@ describe('Result', () => {
         for (let x = 0; x < result.files.length; x++) {
           const file = result.files[x]
           if (file.format === 'MPEG2') {
-            const blob = await file.download()
-            const reader = blob.stream.getReader()
-            assertEquals(file, blob.file)
-            let item
+            const { stream, md5 } = await file.download()
+            const reader = stream.getReader()
+            let chunk
             // eslint-disable-next-line no-cond-assign
-            while (!(item = await reader.read()).done) {
-              console.log('chunk size:', item.value.byteLength)
+            while (!(chunk = await reader.read()).done) {
+              console.log('chunk size:', chunk.value.byteLength)
             }
-            const final = await blob.md5
+            const final = await md5
             console.log('md5: ', final)
             assert(typeof final === 'boolean')
           }
