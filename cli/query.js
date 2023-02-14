@@ -6,66 +6,80 @@ import {
   QueryDate, QueryMediaType, QueryNot, QueryOr, QueryRange, QueryRaw, QueryString,
 } from '../lib/query.js'
 
+function queryLog(fn = () => '', options = {}, ...args) {
+  if (options.logLevel === 'info') {
+    console.info(options, ...args)
+  }
+  try {
+    console.log(fn())
+  } catch (e) {
+    if (options.logLevel === 'error') {
+      console.error(e)
+    }
+  }
+}
+
 function queryCommands() {
   return new Command()
+    .description('Collection of query types to be used with search.')
     .command('string', 'String type for query.')
     .option('-t, --type <val:string>', 'Type of string to search for.', { default: 'any' })
     .option('-c, --contains <val:boolean>', 'Query results should contain this string.', { default: true })
     .option('-f, --fuzzy <val:boolean>', 'Use fuzzy search for this string.', { default: false })
     .arguments('<string:string>')
-    .action(({ type, contains, fuzzy }, string) => console.log(new QueryString(
-      type,
+    .action((options, string) => queryLog(() => new QueryString(
+      options.type,
       string,
-      contains,
-      fuzzy,
-    ).encode()))
+      options.contains,
+      options.fuzzy,
+    ).encode(), options, string))
     .command('mediatype', 'Media type for query.')
     .option('-i, --is <val:boolean>', 'Query results should contain this media type.', { default: true })
     .arguments('<mediaType:string>')
-    .action(({ is }, mediaType) => console.log(new QueryMediaType(
+    .action((options, mediaType) => queryLog(() => new QueryMediaType(
       mediaType,
-      is,
-    ).encode()))
+      options.is,
+    ).encode(), options, mediaType))
     .command('raw', 'Raw type for query.')
     .arguments('<string:string>')
-    .action(({}, string) => console.log(new QueryRaw(
+    .action((options, string) => queryLog(() => new QueryRaw(
       string,
-    ).encode()))
+    ).encode(), options, string))
     .command('date', 'Date type for query.')
     .arguments('<date:string> [to:string]')
-    .action(({}, date, to) => console.log(new QueryDate(
+    .action((options, date, to) => queryLog(() => new QueryDate(
       date,
       to,
-    ).encode()))
+    ).encode(), options, date, to))
     .command('range', 'Range type for query.')
     .option('-t, --type <val:string>', 'Type of range to search for.', { default: 'downloads' })
     .option('-i, --include <val:boolean>', 'Query results should contain this range.', { default: true })
     .arguments('<from:string> <to:string>')
-    .action(({ type, include }, from, to) => console.log(new QueryRange(
-      type,
+    .action((options, from, to) => queryLog(() => new QueryRange(
+      options.type,
       from,
       to,
-      include,
-    ).encode()))
+      options.include,
+    ).encode(), options, from, to))
     .command('and', 'And logical operator.')
     .arguments('<queries...>')
-    .action(({}, ...queries) => {
+    .action((options, ...queries) => queryLog(() => {
       const collection = []
       queries.forEach((item) => collection.push(new QueryRaw(item)))
       console.log(new QueryAnd(...collection).encode())
-    })
+    }, options, ...queries))
     .command('or', 'Or logical operator.')
     .arguments('<queries...>')
-    .action(({}, ...queries) => {
+    .action((options, ...queries) => queryLog(() => {
       const collection = []
       queries.forEach((item) => collection.push(new QueryRaw(item)))
       console.log(new QueryOr(...collection).encode())
-    })
+    }, options, ...queries))
     .command('not', 'Not logical operator.')
     .arguments('<input:string>')
-    .action(({}, input) => console.log(new QueryNot(
+    .action((options, input) => queryLog(() => new QueryNot(
       new QueryRaw(input),
-    ).encode()))
+    ).encode(), options, input))
 }
 
 export default queryCommands

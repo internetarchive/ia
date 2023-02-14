@@ -6,44 +6,76 @@ import Result from '../lib/result.js'
 
 function queueCommands() {
   return new Command()
+    .description('Methods to fetch file metadata and download files.')
     .globalOption('-p, --parallel <val:number>', 'Number of fetch requests to run in parallel.')
     .globalOption('-r, --retry <val:number>', 'Maximum times for each item to be retried.')
     .command('metadata', 'Fetch and display in-depth metadata of each identifier.')
     .option('--jsonl <val:boolean>', 'Print one object out per-line.', { default: false })
     .arguments('[input...]')
-    .action(async ({ parallel, retry, jsonl }, ...input) => {
+    .action(async (options, ...input) => {
       if (input.length === 0) {
         for await (const line of readLines(Deno.stdin)) {
           input.push(line)
         }
       }
+      if (options.logLevel === 'info') {
+        console.info(options, ...input)
+      }
+
       const meta = []
       const results = []
-      input.forEach((identifier) => results.push(new Result(identifier)))
-      const metadata = new MetaQueue(
-        parallel,
-        retry,
-        (item) => meta.push(item),
-        ...results,
-      )
+      try {
+        input.forEach((identifier) => results.push(new Result(identifier)))
+      } catch (e) {
+        if (options.logLevel === 'error') {
+          console.error('Result building error:', e)
+        }
+        return
+      }
+
+      let metadata
+      try {
+        metadata = new MetaQueue(
+          options.parallel,
+          options.retry,
+          (item) => meta.push(item),
+          ...results,
+        )
+      } catch (e) {
+        if (options.logLevel === 'error') {
+          console.error('Queue building error:', e)
+        }
+        return
+      }
+
       await metadata.update()
       // eslint-disable-next-line no-param-reassign
       meta.forEach((item) => item.files.forEach((file) => delete file.parent))
-      if (jsonl) {
+      if (options.jsonl) {
         meta.forEach((item) => console.log(JSON.stringify(item)))
       } else {
         console.log(JSON.stringify(meta))
+      }
+
+      if (options.logLevel === 'error') {
+        metadata.metaErrorMap.forEach((v, k) => {
+          console.error('Update error:', k, v)
+        })
       }
     })
     .command('download', 'Fetch and download files from each identifier.')
     .option('--resume <val:boolean>', 'Enable resuming files.')
     .arguments('<directory:string> [input...]')
-    .action(async ({ parallel, retry }, directory, ...input) => {
+    .action(async (options, directory, ...input) => {
       if (input.length === 0) {
         for await (const line of readLines(Deno.stdin)) {
           input.push(line)
         }
       }
+      if (options.logLevel === 'info') {
+        console.info(options, ...input)
+      }
+
       const resume = {}
       const populateResume = async (dir) => {
         for await (const item of Deno.readDir(dir)) {
@@ -60,6 +92,10 @@ function queueCommands() {
         }
       }
       await populateResume(directory)
+      if (options.logLevel === 'info') {
+        console.info(resume)
+      }
+
       const cb = async (file, stream, md5) => {
         const create = (resume[file.name] === undefined)
         const path = `${directory}/${file.parent.identifier}/${file.name}`
@@ -77,15 +113,38 @@ function queueCommands() {
         await stream.pipeTo(handle.writable)
         console.log(file.name, await md5)
       }
+
       const results = []
-      input.forEach((identifier) => results.push(new Result(identifier)))
-      const download = new DownloadQueue(
-        parallel,
-        retry,
-        cb,
-        ...results,
-      )
+      try {
+        input.forEach((identifier) => results.push(new Result(identifier)))
+      } catch (e) {
+        if (options.logLevel === 'error') {
+          console.error('Result building error:', e)
+        }
+        return
+      }
+
+      let download
+      try {
+        download = new DownloadQueue(
+          options.parallel,
+          options.retry,
+          cb,
+          ...results,
+        )
+      } catch (e) {
+        if (options.logLevel === 'error') {
+          console.error('Queue building error:', e)
+        }
+        return
+      }
       await download.download(resume)
+
+      if (options.logLevel === 'error') {
+        download.downloadErrorMap.forEach((v, k) => {
+          console.error('Download error:', k, v)
+        })
+      }
     })
 }
 

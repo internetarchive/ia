@@ -4,7 +4,7 @@ import queryCommands from './query.js'
 import searchCommands from './search.js'
 import queueCommands from './queue.js'
 
-const logLevelType = new EnumType(['debug', 'info', 'warn', 'error'])
+const logLevelType = new EnumType(['info', 'error'])
 
 async function ia() {
   await new Command()
@@ -12,10 +12,8 @@ async function ia() {
     .version('0.1.0')
     .description('Command line interface for interacting with IA APIs.')
     .type('log-level', logLevelType)
-    .env('DEBUG=<enable:boolean>', 'Enable debug output.')
-    .globalOption('-d, --debug', 'Enable debug output.')
     .globalOption('-l, --log-level <level:log-level>', 'Set log level.', {
-      default: 'info',
+      default: '',
     })
     .command('query', queryCommands())
     .command('search', searchCommands())

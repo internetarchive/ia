@@ -8,6 +8,7 @@ import Search from '../lib/search.js'
 
 function searchCommands() {
   return new Command()
+    .description('Search IA for metadata and identifiers.')
     .option('-p, --page <val:number>', 'Start at this page.', { default: 1 })
     .option('-r, --rows <val:number>', 'Number of rows to return.', { default: 500 })
     .option('-e, --end <val:number>', 'Number of records in total to return.', { default: 10000 })
@@ -15,31 +16,55 @@ function searchCommands() {
     .option('-i, --identifiers <val:boolean>', 'Only return identifiers, one per line, useful to input directly into queue.', { default: true })
     .option('--jsonl <val:boolean>', 'Print one object out per-line. Incompatible with --identifiers', { default: false })
     .arguments('[input:string]')
-    .action(async ({
-      page, rows, end, retry, identifiers, jsonl,
-    }, input) => {
+    .action(async (options, input) => {
       if (input === undefined) {
         input = ''
         for await (const line of readLines(Deno.stdin)) {
           input += line
         }
       }
-      const client = new Search(
-        new QueryRaw(input),
-        FieldTable,
-        page,
-        rows,
-        end,
-        retry,
-      )
-      const results = []
-      for await (const result of client) {
-        results.push(...result)
+      if (options.logLevel === 'info') {
+        console.info(options, input)
       }
-      if (jsonl || identifiers) {
-        results.forEach((item) => console.log(identifiers ? item.identifier : JSON.stringify(item)))
-      } else {
-        console.log(JSON.stringify(results))
+
+      let client
+      try {
+        client = new Search(
+          new QueryRaw(input),
+          FieldTable,
+          options.page,
+          options.rows,
+          options.end,
+          options.retry,
+        )
+      } catch (e) {
+        if (options.logLevel === 'error') {
+          console.error('Search building error:', e)
+        }
+        return
+      }
+
+      const lines = (options.jsonl || options.identifiers)
+      try {
+        if (!lines) {
+          console.log('[')
+        }
+        for await (const result of client) {
+          if (lines) {
+            result.forEach(
+              (item) => console.log(options.identifiers ? item.identifier : JSON.stringify(item)),
+            )
+          } else {
+            console.log(`${JSON.stringify(result)},`)
+          }
+        }
+        if (!lines) {
+          console.log(']')
+        }
+      } catch (e) {
+        if (options.logLevel === 'error') {
+          console.error('Search error:', e)
+        }
       }
     })
 }
