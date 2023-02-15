@@ -91,7 +91,15 @@ function queueCommands() {
           }
         }
       }
-      await populateResume(directory)
+      try {
+        await populateResume(directory)
+      } catch (e) {
+        if (options.logLevel === 'error') {
+          console.error('Resume building error:', e)
+        }
+        Deno.exit(1)
+      }
+
       if (options.logLevel === 'info') {
         console.info(resume)
       }
@@ -121,7 +129,7 @@ function queueCommands() {
         if (options.logLevel === 'error') {
           console.error('Result building error:', e)
         }
-        return
+        Deno.exit(1)
       }
 
       let download
@@ -136,7 +144,7 @@ function queueCommands() {
         if (options.logLevel === 'error') {
           console.error('Queue building error:', e)
         }
-        return
+        Deno.exit(1)
       }
       await download.download(resume)
 

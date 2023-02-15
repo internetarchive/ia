@@ -16,6 +16,7 @@ function queryLog(fn = () => '', options = {}, ...args) {
     if (options.logLevel === 'error') {
       console.error(e)
     }
+    Deno.exit(1)
   }
 }
 

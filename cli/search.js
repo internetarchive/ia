@@ -41,7 +41,7 @@ function searchCommands() {
         if (options.logLevel === 'error') {
           console.error('Search building error:', e)
         }
-        return
+        Deno.exit(1)
       }
 
       const lines = (options.jsonl || options.identifiers)
@@ -65,6 +65,7 @@ function searchCommands() {
         if (options.logLevel === 'error') {
           console.error('Search error:', e)
         }
+        Deno.exit(1)
       }
     })
 }
