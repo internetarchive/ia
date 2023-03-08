@@ -22,7 +22,8 @@
                 "queue",
                 "download",
                 "./download",
-                "babyelephant"
+                "babyelephant",
+                "archivewalk"
             ],
             "attachSimplePort": 9229
         }

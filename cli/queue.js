@@ -148,7 +148,9 @@ function queueCommands() {
 
       if (options.logLevel === 'error') {
         download.downloadErrorMap.forEach((v, k) => {
-          console.error('Download error:', k, v)
+          if (v.from !== v.size) {
+            console.error('Download error:', k, v)
+          }
         })
       }
     })
