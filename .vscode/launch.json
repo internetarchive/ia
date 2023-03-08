@@ -8,7 +8,7 @@
             "request": "launch",
             "name": "Launch Program",
             "type": "node",
-            "program": "${workspaceFolder}",
+            "program": "${workspaceFolder}/cli/index.js",
             "cwd": "${workspaceFolder}",
             "runtimeExecutable": "/opt/brew/bin/deno",
             "runtimeArgs": [
@@ -16,7 +16,14 @@
                 "--unstable",
                 "--inspect",
                 "--inspect-brk",
-                "--allow-all"
+                "--allow-all",
+            ],
+            "args": [
+                "queue",
+                "download",
+                "./download",
+                "babyelephant",
+                "archivewalk"
             ],
             "attachSimplePort": 9229
         }

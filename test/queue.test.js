@@ -65,7 +65,7 @@ describe('Queue', () => {
         stream.cancel()
       }, ...results)
       await queue.download({
-        '894946694244204545.jpg': 5,
+        'twitter-894946694244204545/894946694244204545.jpg': 5,
       })
       assertEquals(queue.downloadErrorMap.size, 0)
     })
@@ -75,7 +75,7 @@ describe('Queue', () => {
         stream.cancel()
       }, ...results)
       await queue.download({
-        '894946694244204545.jpg': -5,
+        'twitter-894946694244204545/894946694244204545.jpg': -5,
       })
       assertThrows(() => { throw queue.downloadErrorMap.get('894946694244204545.jpg') }, Errors.ResumeError)
     })
@@ -85,7 +85,7 @@ describe('Queue', () => {
         stream.cancel()
       }, ...results)
       await queue.download({
-        '894946694244204545.jpg': 500000000000,
+        'twitter-894946694244204545/894946694244204545.jpg': 500000000000,
       })
       assertThrows(() => { throw queue.downloadErrorMap.get('894946694244204545.jpg') }, Errors.ResumeError)
     })
@@ -100,12 +100,15 @@ describe('Queue', () => {
         assertInstanceOf(file, File)
         const reader = stream.getReader()
         let result
+        let size = 0
         while (!(result = await reader.read()).done) {
           console.log('chunk size:', result.value.byteLength)
+          size += result.value.byteLength
         }
         const final = await md5
         console.log('md5: ', final)
         assert(typeof final === 'boolean')
+        assertEquals(size, Number(file.size))
         return final
       }, ...results)
       await queue.download()
@@ -116,12 +119,15 @@ describe('Queue', () => {
         assertInstanceOf(file, File)
         const reader = stream.getReader()
         let result
+        let size = 0
         while (!(result = await reader.read()).done) {
           console.log('chunk size:', result.value.byteLength)
+          size += result.value.byteLength
         }
         const final = await md5
         console.log('md5: ', final)
         assert(typeof final === 'boolean')
+        assertEquals(size, Number(file.size))
         return final
       }, new Result('night_of_the_living_dead'))
       await queue.download({}, (file) => {

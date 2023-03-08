@@ -1,0 +1,67 @@
+on:
+  push:
+    branches:
+    - 'main'
+    tags:
+      - 'v*'
+
+jobs:
+  build_and_publish:
+    runs-on: ubuntu-latest
+    steps:
+    - name: build
+      run: |
+        rm -rf ./bin ./artifacts
+        mkdir -p ./bin ./artifacts
+        TARGETS=("x86_64-unknown-linux-gnu" "x86_64-pc-windows-msvc" "x86_64-apple-darwin" "aarch64-apple-darwin")
+        for target in ${TARGETS[@]}; do
+          deno compile -A --location=https://archive.org --target=$target --output ./bin/ia ./cli/index.js
+          tar -czf ./artifacts/$target.tar.gz ./bin
+          rm -f ./bin/ia*
+        done
+    - name: release
+      uses: actions/create-release@v1
+      id: create_release
+      with:
+        draft: false
+        prerelease: false
+        tag_name: ${{ github.ref }}
+        body_path: CHANGELOG.md
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+    - name: upload linux x86 artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./artifacts/x86_64-unknown-linux-gnu.tar.gz
+        asset_name: ia-x86_64-unknown-linux-gnu.tar.gz
+        asset_content_type: application/gzip
+    - name: upload windows artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./artifacts/x86_64-pc-windows-msvc.tar.gz
+        asset_name: ia-x86_64-pc-windows-msvc.tar.gz
+        asset_content_type: application/gzip
+    - name: upload darwin x86 artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./artifacts/x86_64-apple-darwin.tar.gz
+        asset_name: ia-x86_64-apple-darwin.tar.gz
+        asset_content_type: application/gzip
+    - name: upload darwin arm artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./artifacts/aarch64-apple-darwin.tar.gz
+        asset_name: ia-aarch64-apple-darwin.tar.gz
+        asset_content_type: application/gzip
