@@ -65,7 +65,7 @@ describe('Queue', () => {
         stream.cancel()
       }, ...results)
       await queue.download({
-        '894946694244204545.jpg': 5,
+        'twitter-894946694244204545/894946694244204545.jpg': 5,
       })
       assertEquals(queue.downloadErrorMap.size, 0)
     })
@@ -75,7 +75,7 @@ describe('Queue', () => {
         stream.cancel()
       }, ...results)
       await queue.download({
-        '894946694244204545.jpg': -5,
+        'twitter-894946694244204545/894946694244204545.jpg': -5,
       })
       assertThrows(() => { throw queue.downloadErrorMap.get('894946694244204545.jpg') }, Errors.ResumeError)
     })
@@ -85,7 +85,7 @@ describe('Queue', () => {
         stream.cancel()
       }, ...results)
       await queue.download({
-        '894946694244204545.jpg': 500000000000,
+        'twitter-894946694244204545/894946694244204545.jpg': 500000000000,
       })
       assertThrows(() => { throw queue.downloadErrorMap.get('894946694244204545.jpg') }, Errors.ResumeError)
     })

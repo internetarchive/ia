@@ -81,10 +81,8 @@ function queueCommands() {
         for await (const item of Deno.readDir(dir)) {
           const sub = `${dir}/${item.name}`
           if (!item.isDirectory) {
-            resume[sub.slice(directory.length + 1)
-              .split('/')
-              .slice(1)
-              .join('/')
+            resume[
+              sub.slice(directory.length + 1)
             ] = (await Deno.lstat(sub)).size
           } else {
             await populateResume(sub)
