@@ -16,7 +16,13 @@
                 "--unstable",
                 "--inspect",
                 "--inspect-brk",
-                "--allow-all"
+                "--allow-all",
+            ],
+            "args": [
+                "queue",
+                "download",
+                "./download",
+                "archivewalk"
             ],
             "attachSimplePort": 9229
         }

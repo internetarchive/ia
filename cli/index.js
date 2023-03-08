@@ -13,7 +13,7 @@ async function ia() {
     .description('Command line interface for interacting with IA APIs.')
     .type('log-level', logLevelType)
     .globalOption('-l, --log-level <level:log-level>', 'Set log level.', {
-      default: '',
+      default: 'error',
     })
     .command('query', queryCommands())
     .command('search', searchCommands())
