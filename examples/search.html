@@ -30,7 +30,7 @@
   // import $ from 'https://esm.archive.org/jquery'
 
   import Search from "../lib/search.js"
-  import Fields from "../lib/fields.js"
+  import * as Fields from "../lib/fields.js"
   import * as Query from "../lib/query.js"
   import log from '../util/log.js'
 
@@ -42,7 +42,7 @@
 
     const query = ((q === '') ? new Query.QueryAnd(any, media) : new Query.QueryRaw(q))
 
-    const client = new Search(query, Fields, 1, 500, 10000)
+    const client = new Search(query, Fields.Results, 1, 500, 10000)
 
     const tile = (hit) => {
       const e = document.createElement('div')

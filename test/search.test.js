@@ -4,7 +4,7 @@ import { assertEquals, assertInstanceOf, assertThrows } from 'https://deno.land/
 import * as Errors from '../lib/errors.js'
 import * as Query from '../lib/query.js'
 import Search from '../lib/search.js'
-import Fields from '../lib/fields.js'
+import * as Fields from '../lib/fields.js'
 import Result from '../lib/result.js'
 
 describe('Search', () => {
@@ -17,7 +17,7 @@ describe('Search', () => {
   })
 
   it('Any Dragon', async () => {
-    const client = new Search(query, Fields, 1, 500, 10000, 3)
+    const client = new Search(query, Fields.Results, 1, 500, 10000, 3)
 
     const results = []
     for await (const result of client) {
